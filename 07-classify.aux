@@ -1,0 +1,97 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\@writefile{toc}{\contentsline {chapter}{\numberline {7}Phân lớp \\ (Classification)}{106}{chapter.7}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{chap:classify}{{7}{106}{Phân lớp \\ (Classification)}{chapter.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.1}Bài toán phân lớp}{106}{section.7.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7.1}{\ignorespaces \xpg@aux {}{vietnamese}\ignorespaces Biên quyết định của KNN, Logistic Regression, Decision Tree và SVM (nhân RBF) trên cùng một tập dữ liệu hai chiều (\texttt  {make\_moons}, 300 mẫu; độ chính xác tính trên 30\% dữ liệu giữ lại để kiểm tra).}}{107}{figure.7.1}\protected@file@percent }
+\newlabel{fig:boundaries}{{7.1}{107}{\texorpdfstring {\xpg@aux {\xpg@current@opts }{\languagename }}{}\ignorespaces Biên quyết định của KNN, Logistic Regression, Decision Tree và SVM (nhân RBF) trên cùng một tập dữ liệu hai chiều (\texttt {make\_moons}, 300 mẫu; độ chính xác tính trên 30\% dữ liệu giữ lại để kiểm tra)}{figure.7.1}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.1}Chuẩn bị dữ liệu Iris}{107}{lstlisting.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.2}K láng giềng gần nhất (KNN)}{107}{section.7.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.1}{\ignorespaces \xpg@aux {}{vietnamese}\ignorespaces Dữ liệu huấn luyện và khoảng cách đến điểm cần dự đoán}}{108}{table.7.1}\protected@file@percent }
+\newlabel{tab:knn-class}{{7.1}{108}{\texorpdfstring {\xpg@aux {\xpg@current@opts }{\languagename }}{}\ignorespaces Dữ liệu huấn luyện và khoảng cách đến điểm cần dự đoán}{table.7.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.1}KNN có trọng số}{108}{subsection.7.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.2}KNN cho bài toán hồi quy}{109}{subsection.7.2.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.2}{\ignorespaces \xpg@aux {}{vietnamese}\ignorespaces KNN hồi quy: khoảng cách và trọng số đến $\mathbf  {q} = (3, 4)$}}{109}{table.7.2}\protected@file@percent }
+\newlabel{tab:knn-reg}{{7.2}{109}{\texorpdfstring {\xpg@aux {\xpg@current@opts }{\languagename }}{}\ignorespaces KNN hồi quy: khoảng cách và trọng số đến $\mathbf {q} = (3, 4)$}{table.7.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Lưu ý thực hành.}{109}{paragraph*.29}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.2}KNN với scikit-learn}{110}{lstlisting.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.3}Naive Bayes}{110}{section.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Các biến thể.}{111}{paragraph*.30}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.3}Naive Bayes cho phân loại văn bản kết hợp TF-IDF}{111}{lstlisting.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.4}Hồi quy logistic (Logistic Regression)}{111}{section.7.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.3}{\ignorespaces \xpg@aux {}{vietnamese}\ignorespaces Một số giá trị của hàm sigmoid}}{112}{table.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Hàm mất mát.}{112}{paragraph*.31}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4.1}Suy ra hàm mất mát từ nguyên lý hợp lý cực đại}{112}{subsection.7.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4.2}Ví dụ: mini-batch Gradient Descent cho phân lớp}{113}{subsection.7.4.2}\protected@file@percent }
+\newlabel{sec:minibatch-logreg}{{7.4.2}{113}{Ví dụ: mini-batch Gradient Descent cho phân lớp}{subsection.7.4.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Gradient bị chặn nên không phân kỳ.}{113}{paragraph*.32}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Lô chỉ chứa một lớp: vì sao phải xáo trộn dữ liệu.}{114}{paragraph*.33}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.4}{\ignorespaces \xpg@aux {}{vietnamese}\ignorespaces Entropy chéo trên toàn bộ 5 mẫu theo epoch ($\alpha = 0{,}1$). Sau 200 epoch, cả hai cách đều phân lớp đúng 5/5 mẫu, nhưng cách xáo trộn giảm đều ngay từ đầu}}{114}{table.7.4}\protected@file@percent }
+\newlabel{tab:minibatch-shuffle}{{7.4}{114}{\texorpdfstring {\xpg@aux {\xpg@current@opts }{\languagename }}{}\ignorespaces Entropy chéo trên toàn bộ 5 mẫu theo epoch ($\alpha = 0{,}1$). Sau 200 epoch, cả hai cách đều phân lớp đúng 5/5 mẫu, nhưng cách xáo trộn giảm đều ngay từ đầu}{table.7.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7.2}{\ignorespaces \xpg@aux {}{vietnamese}\ignorespaces Entropy chéo trên toàn bộ dữ liệu sau từng bước cập nhật (mỗi epoch gồm 2 bước). Không xáo trộn, đường mất mát dao động răng cưa vì hai lô kéo trọng số về hai phía ngược nhau.}}{114}{figure.7.2}\protected@file@percent }
+\newlabel{fig:minibatch-shuffle}{{7.2}{114}{\texorpdfstring {\xpg@aux {\xpg@current@opts }{\languagename }}{}\ignorespaces Entropy chéo trên toàn bộ dữ liệu sau từng bước cập nhật (mỗi epoch gồm 2 bước). Không xáo trộn, đường mất mát dao động răng cưa vì hai lô kéo trọng số về hai phía ngược nhau}{figure.7.2}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.4}Mini-batch Gradient Descent cho hồi quy logistic, có và không xáo trộn}{114}{lstlisting.7.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4.3}Chính quy hóa và tham số $C$}{115}{subsection.7.4.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.5}{\ignorespaces \xpg@aux {}{vietnamese}\ignorespaces Ảnh hưởng của $C$ với hồi quy logistic trên \texttt  {load\_breast\_cancer} (30 đặc trưng đã chuẩn hóa; chia 75/25 phân tầng, \texttt  {random\_state=0})}}{115}{table.7.5}\protected@file@percent }
+\newlabel{tab:logreg-C}{{7.5}{115}{\texorpdfstring {\xpg@aux {\xpg@current@opts }{\languagename }}{}\ignorespaces Ảnh hưởng của $C$ với hồi quy logistic trên \texttt {load\_breast\_cancer} (30 đặc trưng đã chuẩn hóa; chia 75/25 phân tầng, \texttt {random\_state=0})}{table.7.5}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.5}Đường chính quy hóa của hồi quy logistic}{116}{lstlisting.7.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Diễn giải.}{116}{paragraph*.34}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Đa lớp.}{116}{paragraph*.35}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.6}Logistic Regression với scikit-learn}{116}{lstlisting.7.6}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7.3}{\ignorespaces \xpg@aux {}{vietnamese}\ignorespaces Đồ thị hàm sigmoid $\sigma (z)$ và ngưỡng quyết định 0,5.}}{117}{figure.7.3}\protected@file@percent }
+\newlabel{fig:sigmoid}{{7.3}{117}{\texorpdfstring {\xpg@aux {\xpg@current@opts }{\languagename }}{}\ignorespaces Đồ thị hàm sigmoid $\sigma (z)$ và ngưỡng quyết định 0,5}{figure.7.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.5}Cây quyết định (Decision Tree)}{117}{section.7.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.5.1}Độ đo độ hỗn tạp}{117}{subsection.7.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Kiểm soát quá khớp.}{118}{paragraph*.36}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Ưu điểm.}{118}{paragraph*.37}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.7}Cây quyết định và trực quan hóa}{118}{lstlisting.7.7}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7.4}{\ignorespaces \xpg@aux {}{vietnamese}\ignorespaces Cây quyết định độ sâu 3 trên dữ liệu Iris (kết quả của \texttt  {plot\_tree}).}}{118}{figure.7.4}\protected@file@percent }
+\newlabel{fig:tree}{{7.4}{118}{\texorpdfstring {\xpg@aux {\xpg@current@opts }{\languagename }}{}\ignorespaces Cây quyết định độ sâu 3 trên dữ liệu Iris (kết quả của \texttt {plot\_tree})}{figure.7.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.6}Máy vector hỗ trợ (SVM)}{119}{section.7.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.6.1}Lề cực đại}{119}{subsection.7.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.6.2}Lề mềm và tham số C}{119}{subsection.7.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.6.3}Thủ thuật nhân}{119}{subsection.7.6.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7.5}{\ignorespaces \xpg@aux {}{vietnamese}\ignorespaces SVM tuyến tính: siêu phẳng phân tách, lề cực đại và các vector hỗ trợ (khoanh tròn).}}{120}{figure.7.5}\protected@file@percent }
+\newlabel{fig:svm}{{7.5}{120}{\texorpdfstring {\xpg@aux {\xpg@current@opts }{\languagename }}{}\ignorespaces SVM tuyến tính: siêu phẳng phân tách, lề cực đại và các vector hỗ trợ (khoanh tròn)}{figure.7.5}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.8}SVM với tìm kiếm tham số C và gamma}{120}{lstlisting.7.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.7}So sánh các thuật toán}{120}{section.7.7}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7.9}So sánh năm thuật toán bằng kiểm định chéo}{120}{lstlisting.7.9}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.6}{\ignorespaces \xpg@aux {}{vietnamese}\ignorespaces So sánh các thuật toán phân lớp cơ bản}}{121}{table.7.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.8}Tóm tắt chương}{121}{section.7.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.9}Bài tập}{122}{section.7.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{Tài liệu tham khảo của chương}{122}{Item.176}\protected@file@percent }
+\@setckpt{chapters/07-classify}{
+\setcounter{page}{124}
+\setcounter{equation}{14}
+\setcounter{enumi}{13}
+\setcounter{enumii}{0}
+\setcounter{enumiii}{0}
+\setcounter{enumiv}{0}
+\setcounter{footnote}{0}
+\setcounter{mpfootnote}{0}
+\setcounter{part}{2}
+\setcounter{chapter}{7}
+\setcounter{section}{9}
+\setcounter{subsection}{0}
+\setcounter{subsubsection}{0}
+\setcounter{paragraph}{0}
+\setcounter{subparagraph}{0}
+\setcounter{figure}{5}
+\setcounter{table}{6}
+\setcounter{parentequation}{0}
+\setcounter{float@type}{8}
+\setcounter{LT@tables}{0}
+\setcounter{LT@chunks}{0}
+\setcounter{lstnumber}{13}
+\setcounter{section@level}{0}
+\setcounter{Item}{189}
+\setcounter{Hfootnote}{1}
+\setcounter{Hy@AnnotLevel}{0}
+\setcounter{bookmark@seq@number}{179}
+\setcounter{definition}{4}
+\setcounter{theorem}{0}
+\setcounter{example}{8}
+\setcounter{lstlisting}{9}
+}

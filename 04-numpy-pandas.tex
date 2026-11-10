@@ -1,0 +1,444 @@
+% =========================================================
+% CHUONG: XU LY DU LIEU VOI NUMPY VA PANDAS
+% =========================================================
+
+\chapter{Xử lý và trực quan hóa dữ liệu \\ (NumPy, Pandas, Matplotlib)}
+\label{chap:numpy-pandas}
+
+Trong khoa học dữ liệu và học máy, xử lý dữ liệu đóng vai trò nền tảng. Dữ liệu thực tế thường lộn xộn, thiếu sót hoặc không đúng định dạng. Để giải quyết vấn đề này, Python cung cấp một hệ sinh thái thư viện mạnh mẽ, trong đó nổi bật nhất là NumPy và Pandas. Chương này hướng dẫn cách dùng hai thư viện để biểu diễn, truy xuất, biến đổi và tổng hợp dữ liệu --- những thao tác xuất hiện trong mọi chương sau của giáo trình. Phần cuối chương giới thiệu \textbf{Matplotlib} để trực quan hóa dữ liệu và \textbf{SciPy} cho các phép tính thống kê, tối ưu hóa. Đây là hai công cụ được dùng để vẽ hình và kiểm chứng kết quả ở các chương sau.
+
+\noindent Sau khi học xong chương này, người học có khả năng:
+\begin{itemize}
+    \item Giải thích vì sao mảng NumPy nhanh hơn list của Python; phân biệt \textit{view} và \textit{copy}.
+    \item Khởi tạo, cắt, lọc và biến đổi mảng; vận dụng vector hóa, broadcasting và tham số \texttt{axis}.
+    \item Giải hệ phương trình tuyến tính bằng \texttt{np.linalg}.
+    \item Tạo, đọc và truy xuất \texttt{DataFrame} bằng \texttt{loc}, \texttt{iloc} và điều kiện lọc.
+    \item Xử lý dữ liệu thiếu, biến đổi cột, gom nhóm và gộp bảng bằng Pandas.
+    \item Vẽ biểu đồ đường, phân tán, tần suất và biểu đồ hộp bằng Matplotlib theo lối hướng đối tượng; chọn đúng loại biểu đồ cho câu hỏi cần trả lời.
+    \item Dùng SciPy để tính hệ số tương quan, z-score và cực tiểu hóa một hàm mất mát.
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{Khởi nguồn của NumPy và Pandas}
+% ---------------------------------------------------------
+
+Python vốn không được thiết kế cho tính toán số: mỗi phần tử của một list là một đối tượng riêng nằm rải rác trong bộ nhớ, và mỗi phép cộng đều phải kiểm tra kiểu dữ liệu. Các thư viện Numeric (1995) và Numarray ra đời để khắc phục điều đó. Năm 2005--2006, Travis Oliphant hợp nhất chúng thành \textbf{NumPy} (Numerical Python); bài tổng quan của Harris và cộng sự (2020) trên tạp chí \textit{Nature} ghi nhận NumPy là nền móng của toàn bộ hệ sinh thái Python khoa học, bao gồm SciPy và scikit-learn.
+
+\textbf{Pandas} do Wes McKinney bắt đầu phát triển năm 2008 tại công ty tài chính AQR Capital, nhằm đưa vào Python kiểu làm việc với bảng dữ liệu có nhãn vốn phổ biến trong R và SQL (McKinney, 2010). Pandas được xây dựng trên NumPy: có thể hình dung mỗi cột của một bảng Pandas là một mảng có kèm nhãn.
+
+% ---------------------------------------------------------
+\section{Thư viện NumPy -- Tính toán khoa học}
+% ---------------------------------------------------------
+
+NumPy cung cấp đối tượng mảng đa chiều \texttt{ndarray}: một khối bộ nhớ liền nhau chứa các phần tử \textbf{cùng kiểu dữ liệu}. Chính hai đặc điểm này cho phép NumPy thực hiện phép tính bằng các vòng lặp đã biên dịch sẵn, nhanh hơn nhiều so với vòng lặp Python.
+
+\subsection{Khởi tạo mảng và kiểm tra thuộc tính}
+
+Mảng được tạo từ list của Python hoặc bằng các hàm khởi tạo những ma trận đặc biệt. Ba thuộc tính cần kiểm tra đầu tiên là \texttt{shape} (kích thước theo từng chiều), \texttt{ndim} (số chiều) và \texttt{dtype} (kiểu phần tử).
+
+\begin{lstlisting}[caption={Khởi tạo mảng NumPy và kiểm tra thuộc tính}]
+import numpy as np
+
+arr1D = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+print("Shape 1D:", arr1D.shape, "| Dtype:", arr1D.dtype)   # (10,) | int64
+
+arr2D = np.array([[1, 2, 3, 4],
+                  [5, 6, 7, 8],
+                  [9, 10, 11, 12]])
+print("Shape 2D:", arr2D.shape, "| ndim:", arr2D.ndim)     # (3, 4) | 2
+
+arr_zeros = np.zeros((3, 4))          # ma tran 3 x 4 toan so 0
+arr_ones = np.ones((2, 5))            # ma tran 2 x 5 toan so 1
+arr_eye = np.identity(3)              # ma tran don vi 3 x 3
+arr_random = np.random.randn(3, 4)    # phan phoi chuan tac N(0, 1)
+\end{lstlisting}
+
+\noindent\textit{Lưu ý:} kiểu \texttt{int64} ở trên có thể khác trên máy khác. Với mã nguồn mới, NumPy khuyến nghị tạo số ngẫu nhiên qua \texttt{rng = np.random.default\_rng(42)} rồi gọi \texttt{rng.standard\_normal((3, 4))}, nhờ đó kết quả tái lập được.
+
+\subsection{Thêm, xóa và sửa phần tử}
+
+Có thể gán trực tiếp giá trị cho một phần tử. Các hàm \texttt{append}, \texttt{insert}, \texttt{delete} thì \textbf{không sửa mảng gốc} mà trả về một mảng mới. Vì kích thước của \texttt{ndarray} là cố định, mỗi lần gọi đều phải cấp phát và sao chép toàn bộ dữ liệu; do đó không nên gọi \texttt{np.append} trong vòng lặp dài, mà nên gom dữ liệu vào list rồi chuyển thành mảng một lần ở cuối.
+
+\begin{lstlisting}[caption={Thêm, xóa và sửa phần tử mảng}]
+arr1D[0] = 99                              # sua truc tiep mang goc
+
+arr_appended = np.append(arr1D, [11, 12])  # them vao cuoi -> mang moi
+arr_inserted = np.insert(arr1D, 2, 999)    # chen 999 vao vi tri 2 -> mang moi
+arr_deleted = np.delete(arr1D, 0)          # xoa phan tu dau -> mang moi
+arr1D[0] = 1                               # tra lai gia tri ban dau
+\end{lstlisting}
+
+\subsection{Slicing và Boolean Indexing}
+\label{sec:boolean-indexing}
+
+\textbf{Slicing} lấy một phần của mảng theo cú pháp \texttt{bắt\_đầu:kết\_thúc} trên từng chiều (không gồm vị trí kết thúc). \textbf{Boolean Indexing} dùng một mảng điều kiện đúng/sai để lọc phần tử; đây là cách lọc dữ liệu thông dụng nhất.
+
+\begin{lstlisting}[caption={Slicing và lọc dữ liệu bằng điều kiện}]
+sub_arr = arr2D[:2, :3]              # 2 dong dau, 3 cot dau
+print(sub_arr)                       # [[1 2 3]
+                                     #  [5 6 7]]
+
+city_data = np.random.randn(5, 3)
+pos_values = city_data[city_data > 0]    # mang 1 chieu cac gia tri duong
+print("Cac gia tri > 0:", pos_values)
+
+city_data[city_data > 0] = 0             # thay moi gia tri duong bang 0
+print(city_data)
+\end{lstlisting}
+
+\paragraph{View và copy.} Đây là cái bẫy phổ biến nhất của NumPy: slicing trả về một \textbf{view}, tức một ``cửa sổ'' nhìn vào cùng vùng nhớ, chứ không sao chép dữ liệu. Sửa view đồng nghĩa với sửa mảng gốc. Muốn dữ liệu độc lập, phải gọi \texttt{.copy()}. Ngược lại, Boolean Indexing luôn trả về bản sao.
+
+\begin{lstlisting}[caption={Slicing tạo view, không sao chép dữ liệu}]
+v = arr1D[:3]
+v[0] = 99
+print(arr1D[:3])     # [99  2  3]  -> mang goc bi thay doi!
+arr1D[0] = 1
+
+c = arr1D[:3].copy()
+c[0] = 99
+print(arr1D[:3])     # [1 2 3]     -> mang goc giu nguyen
+\end{lstlisting}
+
+\subsection{Vector hóa, broadcasting và tham số axis}
+
+\textbf{Vector hóa} (vectorization) là viết phép tính trên cả mảng thay vì lặp qua từng phần tử: mã nguồn ngắn hơn, gần với công thức toán hơn, và nhanh hơn rất nhiều. Khi thử nhân đôi một triệu số trên máy của nhóm tác giả, vòng lặp Python mất khoảng 320 ms, còn phép tính NumPy khoảng 5 ms; con số cụ thể tùy máy.
+
+\begin{lstlisting}[caption={So sánh vòng lặp Python với vector hóa}]
+x = np.arange(1_000_000, dtype=float)
+y1 = [i * 2 for i in x.tolist()]     # vong lap Python: cham
+y2 = x * 2                           # vector hoa: nhanh
+\end{lstlisting}
+
+\textbf{Broadcasting} là quy tắc cho phép tính toán giữa hai mảng khác kích thước: so sánh các chiều từ phải sang trái, hai chiều tương thích khi bằng nhau hoặc một trong hai bằng 1; chiều bằng 1 được ``kéo giãn'' cho khớp. Tham số \texttt{axis} chỉ chiều bị ``gộp lại'' trong phép tổng hợp: \texttt{axis=0} tính theo từng cột, \texttt{axis=1} tính theo từng dòng.
+
+\begin{example}[Chuẩn hóa tâm bằng broadcasting]
+Với \texttt{arr2D} có kích thước $(3, 4)$, trung bình theo từng cột \texttt{arr2D.mean(axis=0)} có kích thước $(4,)$ và bằng $(5, 6, 7, 8)$. Phép trừ \texttt{arr2D - arr2D.mean(axis=0)} tự động trừ vector này khỏi cả ba dòng. Đây chính là bước chuẩn hóa tâm của \texttt{StandardScaler} và PCA ở các chương sau.
+\end{example}
+
+\begin{lstlisting}[caption={Tổng hợp theo axis và broadcasting}]
+print(arr2D.sum(axis=0))     # theo cot:  [15 18 21 24]
+print(arr2D.sum(axis=1))     # theo dong: [10 26 42]
+print(arr2D.mean())          # toan bo mang: 6.5
+
+print(arr2D - arr2D.mean(axis=0))
+# [[-4. -4. -4. -4.]
+#  [ 0.  0.  0.  0.]
+#  [ 4.  4.  4.  4.]]
+
+print(arr2D.reshape(4, 3).shape, arr2D.T.shape)   # (4, 3) (4, 3)
+\end{lstlisting}
+
+\subsection{Đại số tuyến tính}
+
+Mô-đun \texttt{np.linalg} cung cấp các phép tính đại số tuyến tính: định thức, nghịch đảo, trị riêng, SVD và giải hệ phương trình. Toán tử \texttt{@} (hoặc \texttt{np.dot}) là phép nhân ma trận, còn \texttt{*} là phép nhân \textbf{từng phần tử}.
+
+\begin{example}[Giải hệ phương trình tuyến tính]
+Giải hệ
+\[
+\begin{cases}
+7x + 5y - 3z = 16 \\
+3x - 5y + 2z = -8 \\
+5x + 3y - 7z = 0
+\end{cases}
+\]
+Viết dưới dạng $\mathbf{A}\mathbf{x} = \mathbf{b}$, với $\det\mathbf{A} = 256 \neq 0$ nên hệ có nghiệm duy nhất $(x, y, z) = (1, 3, 2)$. Kiểm tra phương trình đầu: $7 \cdot 1 + 5 \cdot 3 - 3 \cdot 2 = 16$.
+\end{example}
+
+\begin{lstlisting}[caption={Giải hệ phương trình bằng np.linalg.solve}]
+A = np.array([[7, 5, -3],
+              [3, -5, 2],
+              [5, 3, -7]])
+b = np.array([16, -8, 0])
+
+x = np.linalg.solve(A, b)
+print("Nghiem x, y, z:", x)                        # [1. 3. 2.]
+print("Kiem tra:", np.allclose(np.dot(A, x), b))   # True
+\end{lstlisting}
+
+\noindent Nên dùng \texttt{np.linalg.solve} thay vì tính \texttt{np.linalg.inv(A) @ b}: cách này nhanh hơn và ổn định số học hơn. So sánh hai số thực phải dùng \texttt{np.allclose} chứ không dùng \texttt{==}, vì phép tính dấu phẩy động luôn có sai số làm tròn.
+
+% ---------------------------------------------------------
+\section{Thư viện Pandas -- Xử lý và phân tích dữ liệu}
+% ---------------------------------------------------------
+
+Pandas cung cấp hai cấu trúc dữ liệu: \texttt{Series} (một chiều, có nhãn) và \texttt{DataFrame} (bảng hai chiều, mỗi cột có thể mang một kiểu dữ liệu khác nhau). Đây là khác biệt lớn so với \texttt{ndarray}, và là lý do Pandas phù hợp với dữ liệu dạng bảng ngoài thực tế.
+
+\subsection{Tạo và đọc dữ liệu}
+\label{sec:pandas-create}
+
+\texttt{DataFrame} có thể được tạo từ list các dictionary, từ list các list kèm tên cột, hoặc đọc từ tệp bằng \texttt{read\_csv()}. Hàm \texttt{head()} và \texttt{tail()} cho xem nhanh các dòng đầu và cuối. Ví dụ dưới đây dùng \textbf{số liệu mô phỏng} của một mã cổ phiếu, chỉ nhằm minh họa, không phải giá giao dịch thật.
+
+\begin{lstlisting}[caption={Tạo DataFrame, ghi và đọc tệp CSV}]
+import pandas as pd
+
+data_dict = [
+    {"city": "Delhi", "data": 1000},
+    {"city": "Bangalore", "data": 2000},
+    {"city": "Mumbai", "data": 1500},
+]
+df_dict = pd.DataFrame(data_dict)
+
+data_list = [[1, "Apple"], [2, "Banana"]]
+df_list = pd.DataFrame(data_list, columns=["ID", "Fruit"])
+
+data_vnm = {
+    "Date": ["10-01-2023", "10-02-2023", "10-03-2023", "10-04-2023",
+             "10-05-2023", "10-06-2023", "10-07-2023"],
+    "Ticker": ["VNM"] * 7,
+    "Open": [75.5, 76.0, 75.8, 77.2, 76.5, 78.0, 77.8],
+    "Close": [76.0, 75.5, 77.0, 76.5, 78.0, 77.5, 78.2],
+    "Volume": [12000, 15000, 13500, 18000, 16000, 20000, 19500],
+}
+df_mock = pd.DataFrame(data_vnm)
+df_mock.to_csv("vinamilk_stock.csv", index=False)   # ghi ra tep CSV
+
+df_stock = pd.read_csv("vinamilk_stock.csv")        # doc lai tu tep
+print(df_stock.tail(3))
+#          Date Ticker  Open  Close  Volume
+# 4  10-05-2023    VNM  76.5   78.0   16000
+# 5  10-06-2023    VNM  78.0   77.5   20000
+# 6  10-07-2023    VNM  77.8   78.2   19500
+\end{lstlisting}
+
+\subsection{Truy xuất và lọc dữ liệu}
+
+Hai cách truy xuất quan trọng là \texttt{loc} (theo \textbf{nhãn}) và \texttt{iloc} (theo \textbf{vị trí số nguyên}). Điểm dễ nhầm: lát cắt của \texttt{iloc} không gồm vị trí cuối, còn lát cắt của \texttt{loc} \textbf{có gồm} nhãn cuối. Điều kiện lọc hoạt động giống Boolean Indexing của NumPy; khi kết hợp nhiều điều kiện phải dùng \texttt{\&}, \texttt{|} và đặt mỗi điều kiện trong ngoặc đơn.
+
+\begin{lstlisting}[caption={Truy xuất bằng iloc, loc và điều kiện lọc}]
+print(df_stock.iloc[:2, :3])      # 2 dong dau, 3 cot dau
+
+high = df_stock.loc[df_stock["Volume"] > 16000, ["Date", "Close"]]
+print(high)
+#          Date  Close
+# 3  10-04-2023   76.5
+# 5  10-06-2023   77.5
+# 6  10-07-2023   78.2
+\end{lstlisting}
+
+\subsection{Dữ liệu thiếu và thống kê mô tả}
+
+\texttt{isna().sum()} đếm số ô thiếu (\texttt{NaN}) theo từng cột; \texttt{describe()} và \texttt{info()} mô tả nhanh bộ dữ liệu. Các hàm thống kê của Pandas mặc định \textbf{bỏ qua} \texttt{NaN}, nên số đếm \texttt{count} của cột thiếu sẽ nhỏ hơn số dòng.
+
+\begin{lstlisting}[caption={Phát hiện và điền dữ liệu thiếu}]
+df = pd.DataFrame({
+    "price": [100, 200, np.nan],
+    "quantity_purchased": [10, 20, 32],
+    "user_type": ["A", "B", "C"],
+    "user_class": ["X", "Y", "X"],
+})
+print(df.isna().sum())           # cot price thieu 1 gia tri
+print(df.describe())             # price: count = 2, mean = 150
+
+mean_price = df["price"].mean()  # 150.0
+df["price"] = df["price"].fillna(mean_price)
+\end{lstlisting}
+
+\noindent\textit{Lưu ý về phiên bản:} cách viết cũ \texttt{df["price"].fillna(value, inplace=True)} vốn thao tác trên một bản sao của cột, nên từ Pandas 3 không còn thay đổi \texttt{df}. Hãy luôn gán lại kết quả cho cột như trên. Các kỹ thuật điền giá trị thiếu có cơ sở hơn được trình bày ở Chương~\ref{chap:preprocessing}.
+
+\subsection{Thay thế và áp dụng hàm}
+
+\texttt{replace()} thay giá trị theo một bảng ánh xạ; \texttt{apply()} áp dụng một hàm cho từng phần tử của cột. Khi có thể, nên ưu tiên phép tính vector hóa: \texttt{df["price"] * 0.9} cho cùng kết quả với \texttt{apply} dưới đây nhưng nhanh hơn.
+
+\begin{lstlisting}[caption={Biến đổi cột bằng replace và apply}]
+df["user_type"] = df["user_type"].replace({"A": "Premium", "B": "Standard"})
+df["discounted_price"] = df["price"].apply(lambda x: x * 0.9)
+print(df)
+#    price  quantity_purchased user_type user_class  discounted_price
+# 0  100.0                  10   Premium          X              90.0
+# 1  200.0                  20  Standard          Y             180.0
+# 2  150.0                  32         C          X             135.0
+\end{lstlisting}
+
+\subsection{Gom nhóm và gộp dữ liệu}
+
+\texttt{groupby()} thực hiện quy trình \textbf{tách -- áp dụng -- kết hợp} (split--apply--combine; Wickham, 2011): tách các dòng thành nhóm theo giá trị của một cột, tính toán trên từng nhóm, rồi ghép kết quả. \texttt{concat()} nối các bảng theo chiều dọc hoặc chiều ngang. \texttt{merge()} ghép hai bảng theo cột khóa chung, tương tự phép \texttt{JOIN} của SQL.
+
+\begin{lstlisting}[caption={Gom nhóm bằng groupby, gộp bảng bằng concat và merge}]
+grouped = df.groupby("user_class")["quantity_purchased"].agg(["sum", "mean", "count"])
+print(grouped)
+#             sum  mean  count
+# user_class
+# X            42  21.0      2
+# Y            20  20.0      1
+
+head_tail = pd.concat([df.head(1), df.tail(1)], ignore_index=True)   # noi theo dong
+
+discounts = pd.DataFrame({"user_class": ["X", "Y", "Z"],
+                          "discount": [0.1, 0.2, 0.3]})
+merged = pd.merge(df[["user_class", "price"]], discounts,
+                  on="user_class", how="left")
+print(merged)
+#   user_class  price  discount
+# 0          X  100.0       0.1
+# 1          Y  200.0       0.2
+# 2          X  150.0       0.1
+\end{lstlisting}
+
+\noindent Với \texttt{how="left"}, mọi dòng của bảng bên trái được giữ lại; dòng \texttt{Z} của bảng bên phải bị bỏ vì không có dòng nào khớp.
+
+% ---------------------------------------------------------
+\section{Trực quan hóa dữ liệu với Matplotlib}
+\label{sec:matplotlib}
+% ---------------------------------------------------------
+
+Bảng số cho biết giá trị, còn biểu đồ cho thấy \textbf{hình dạng} của dữ liệu: xu hướng, nhóm, ngoại lai, độ lệch. Trước khi xây dựng bất kỳ mô hình nào, người làm học máy luôn vẽ dữ liệu để kiểm tra các giả định. Bộ tứ của Anscombe (1973) là minh chứng kinh điển: bốn tập dữ liệu có cùng trung bình, cùng phương sai, cùng hệ số tương quan và cùng đường hồi quy, nhưng khi vẽ ra thì có hình dạng hoàn toàn khác nhau.
+
+\textbf{Matplotlib} do John D. Hunter viết năm 2003, ban đầu để hiển thị tín hiệu điện não đồ, với cú pháp mô phỏng MATLAB (Hunter, 2007). Ngày nay đây là thư viện vẽ đồ thị nền tảng của Python. Các công cụ cấp cao hơn như thư viện seaborn hay phương thức \texttt{plot} của Pandas đều vẽ thông qua Matplotlib.
+
+\subsection{Figure, Axes và hai cách viết}
+
+Một hình vẽ của Matplotlib gồm một \textbf{Figure} (khung hình) chứa một hoặc nhiều \textbf{Axes} (vùng vẽ, mỗi vùng có hệ trục riêng). Có hai cách viết lệnh vẽ:
+\begin{itemize}
+    \item \textbf{Cách viết pyplot}: gọi trực tiếp \texttt{plt.plot(...)}, \texttt{plt.xlabel(...)}. Các lệnh tác động lên vùng vẽ đang được chọn. Cách này ngắn gọn, phù hợp để xem nhanh một biểu đồ.
+    \item \textbf{Cách viết hướng đối tượng}: tạo khung hình và các vùng vẽ bằng \texttt{fig, ax = plt.subplots()}, rồi gọi phương thức của từng vùng vẽ như \texttt{ax.plot(...)}, \texttt{ax.set\_xlabel(...)}. Cách này rõ ràng khi có nhiều biểu đồ con, và được dùng trong giáo trình.
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|p{7cm}|}
+\hline
+\textbf{Biểu đồ} & \textbf{Phương thức} & \textbf{Câu hỏi biểu đồ trả lời} \\
+\hline
+Đường & \texttt{ax.plot} & Đại lượng thay đổi thế nào theo thời gian hay theo số vòng lặp (giá cổ phiếu, mất mát theo epoch)? \\ \hline
+Phân tán & \texttt{ax.scatter} & Hai biến có quan hệ với nhau không? Các lớp có tách biệt nhau không? \\ \hline
+Tần suất & \texttt{ax.hist} & Một biến phân phối ra sao: lệch về một phía, nhiều đỉnh hay có đuôi dài? \\ \hline
+Hộp & \texttt{ax.boxplot} & Phân phối khác nhau thế nào giữa các nhóm? Điểm nào là ngoại lai? \\ \hline
+Cột & \texttt{ax.bar} & Một đại lượng khác nhau thế nào giữa các hạng mục (độ chính xác của các mô hình)? \\ \hline
+Ảnh, ma trận & \texttt{ax.imshow} & Hiển thị ảnh, ma trận tương quan, ma trận nhầm lẫn. \\ \hline
+\end{tabular}
+\caption{Chọn loại biểu đồ theo câu hỏi cần trả lời}
+\label{tab:plot-types}
+\end{table}
+
+\subsection{Bốn biểu đồ cơ bản}
+
+Đoạn mã dưới đây vẽ bốn biểu đồ trên cùng một khung hình $2 \times 2$. Biểu đồ đường dùng lại bảng \texttt{df\_stock} tạo ở Mục~\ref{sec:pandas-create}. Ba biểu đồ còn lại dùng dữ liệu mô phỏng 100 sinh viên gồm số giờ tự học mỗi tuần và điểm thi. Điểm thi được sinh theo quan hệ tuyến tính với số giờ tự học, cộng thêm nhiễu ngẫu nhiên. Đây chính là dạng dữ liệu của bài toán hồi quy ở Chương~\ref{chap:regression}. Nếu chuyển điểm thành nhãn đậu hoặc rớt, ta có bài toán phân lớp của Chương~\ref{chap:classify}.
+
+\begin{lstlisting}[caption={Bốn biểu đồ cơ bản với Matplotlib}]
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(0)
+hours = rng.uniform(0, 10, 100)                     # gio tu hoc moi tuan
+score = np.clip(2 + 0.7 * hours + rng.normal(0, 1, 100), 0, 10)
+passed = score >= 5                                 # dau neu diem >= 5
+
+fig, axes = plt.subplots(2, 2, figsize=(7, 5.2))    # khung hinh 2 x 2
+
+ax = axes[0, 0]                                     # (a) bieu do duong
+session = range(1, len(df_stock) + 1)
+ax.plot(session, df_stock["Open"], marker="o", label="Open")
+ax.plot(session, df_stock["Close"], marker="s", label="Close")
+ax.set(title="(a) Gia VNM", xlabel="Phien giao dich", ylabel="Gia")
+ax.legend()
+
+ax = axes[0, 1]                                     # (b) bieu do phan tan
+ax.scatter(hours[passed], score[passed], label="Dau")
+ax.scatter(hours[~passed], score[~passed], marker="x", label="Rot")
+ax.axhline(5, color="gray", linestyle="--")         # nguong diem 5
+ax.set(title="(b) Gio tu hoc va diem thi",
+       xlabel="Gio tu hoc", ylabel="Diem")
+ax.legend()
+
+ax = axes[1, 0]                                     # (c) bieu do tan suat
+ax.hist(score, bins=10, edgecolor="white")
+ax.set(title="(c) Phan phoi diem thi",
+       xlabel="Diem", ylabel="So sinh vien")
+
+ax = axes[1, 1]                                     # (d) bieu do hop
+ax.boxplot([score[:35], score[35:70], score[70:]])
+ax.set_xticks([1, 2, 3], ["Lop A", "Lop B", "Lop C"])
+ax.set(title="(d) Diem theo lop", ylabel="Diem")
+
+fig.tight_layout()                                  # tranh chu de len nhau
+fig.savefig("bon_bieu_do.png", dpi=150)             # luu ra tep anh
+plt.show()
+\end{lstlisting}
+
+\hinhchuachen{ch-numpy-matplotlib.png}{Kết quả của đoạn mã trên: (a) biểu đồ đường, (b) biểu đồ phân tán tô màu theo nhãn, (c) biểu đồ tần suất, (d) biểu đồ hộp. Chữ trên hình lấy từ chuỗi ký tự trong mã nguồn nên được viết không dấu.}{fig:matplotlib-demo}
+
+Một số điểm cần lưu ý trong đoạn mã:
+\begin{itemize}
+    \item \texttt{axes} là một mảng NumPy kích thước $2 \times 2$ chứa các vùng vẽ; \texttt{axes[0, 1]} là vùng ở dòng 0, cột 1.
+    \item \texttt{hours[passed]} là phép lọc Boolean indexing ở Mục~\ref{sec:boolean-indexing}; toán tử \texttt{\textasciitilde} đảo ngược mảng logic, nên \texttt{hours[\textasciitilde passed]} lấy các sinh viên rớt.
+    \item \texttt{ax.set(...)} đặt nhiều thuộc tính cùng lúc, tương đương gọi lần lượt \texttt{set\_title}, \texttt{set\_xlabel} và \texttt{set\_ylabel}.
+    \item Hộp trong biểu đồ (d) trải từ tứ phân vị $Q_1$ đến $Q_3$, đường giữa hộp là trung vị; hai ``râu'' kéo dài tối đa $1{,}5$ lần khoảng tứ phân vị. Điểm nằm ngoài râu được vẽ riêng. Đó chính là quy tắc IQR phát hiện ngoại lai ở Chương~\ref{chap:preprocessing}.
+    \item Trong Jupyter Notebook, biểu đồ hiện ngay dưới ô lệnh. Khi chạy tệp \texttt{.py}, lệnh \texttt{plt.show()} mở cửa sổ hiển thị.
+\end{itemize}
+
+\paragraph{Vẽ nhanh từ Pandas.} DataFrame có sẵn phương thức \texttt{plot} gọi Matplotlib bên dưới: \texttt{df\_stock.plot(y=["Open", "Close"])} vẽ biểu đồ đường, còn \texttt{df\_stock.hist()} vẽ biểu đồ tần suất cho mọi cột số. Thư viện \textbf{seaborn} (Waskom, 2021) bổ sung các biểu đồ thống kê cấp cao, chẳng hạn bản đồ nhiệt của ma trận tương quan dùng trong các bài thực hành ở Chương~\ref{chap:labs}.
+
+% ---------------------------------------------------------
+\section{SciPy: thống kê và tối ưu hóa}
+\label{sec:scipy}
+% ---------------------------------------------------------
+
+\textbf{SciPy} (Scientific Python) ra đời năm 2001 và được xây dựng trên NumPy (Virtanen và cộng sự, 2020). Thư viện này gom các thuật toán khoa học kinh điển thành nhiều module con. Hai module hữu ích nhất cho học máy là \texttt{scipy.stats} cho thống kê và \texttt{scipy.optimize} cho tối ưu hóa.
+
+\begin{lstlisting}[caption={Tương quan, z-score và cực tiểu hóa hàm mất mát với SciPy}]
+from scipy import stats, optimize
+
+x = np.array([2.0, 4.0, 6.0, 8.0])
+y = np.array([3.1, 4.9, 7.2, 8.8])
+r, p_value = stats.pearsonr(x, y)               # he so tuong quan Pearson
+print(round(r, 4))                              # 0.9978
+print(stats.zscore([2, 4, 6, 8, 30]).round(2))
+# [-0.78 -0.59 -0.39 -0.2   1.96]
+
+def loss(params):                               # MSE cua y = w*x + b
+    w, b = params
+    return np.mean((y - (w * x + b)) ** 2)
+
+res = optimize.minimize(loss, x0=[0.0, 0.0])    # bat dau tu w = b = 0
+print(res.x.round(3))                           # [0.97 1.15]
+\end{lstlisting}
+
+Ba kết quả trên sẽ được gặp lại ở các chương sau:
+\begin{itemize}
+    \item Hệ số tương quan $r = 0{,}9978$ rất gần 1, cho thấy $x$ và $y$ có quan hệ tuyến tính rất chặt. Phân tích tương quan được dùng để lựa chọn đặc trưng ở Chương~\ref{chap:preprocessing}.
+    \item Trong cột $(2, 4, 6, 8, 30)$, giá trị 30 khác hẳn các giá trị còn lại nhưng chỉ có $z = 1{,}96$, chưa vượt ngưỡng 3 thường dùng để phát hiện ngoại lai. Chương~\ref{chap:preprocessing} giải thích hiện tượng ``che lấp'' này.
+    \item Hàm \texttt{minimize} tìm được $w = 0{,}97$ và $b = 1{,}15$ chỉ từ định nghĩa của hàm mất mát. Đây đúng là nghiệm bình phương tối thiểu: $w = \sum_i (x_i - \bar{x})(y_i - \bar{y}) / \sum_i (x_i - \bar{x})^2 = 19{,}4/20 = 0{,}97$ và $b = \bar{y} - w\bar{x} = 6 - 0{,}97 \times 5 = 1{,}15$. Chương~\ref{chap:regression} xây dựng công thức này, cùng thuật toán Gradient Descent để tự tìm cực tiểu.
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{Tóm tắt chương}
+% ---------------------------------------------------------
+\begin{itemize}
+    \item \texttt{ndarray} chứa các phần tử cùng kiểu trong vùng nhớ liền nhau, nên tính toán rất nhanh; hãy kiểm tra \texttt{shape}, \texttt{ndim}, \texttt{dtype}.
+    \item Slicing trả về view, muốn dữ liệu độc lập phải dùng \texttt{.copy()}; \texttt{append}, \texttt{insert}, \texttt{delete} trả về mảng mới.
+    \item Ưu tiên vector hóa và broadcasting thay vì vòng lặp; \texttt{axis=0} tính theo cột, \texttt{axis=1} tính theo dòng.
+    \item \texttt{DataFrame} là bảng có nhãn; \texttt{loc} truy xuất theo nhãn, \texttt{iloc} theo vị trí.
+    \item Phát hiện dữ liệu thiếu bằng \texttt{isna()}, điền bằng \texttt{fillna()} và gán lại kết quả cho cột.
+    \item \texttt{groupby} tổng hợp theo nhóm; \texttt{concat} nối bảng; \texttt{merge} ghép bảng theo khóa.
+    \item Matplotlib: một Figure chứa các Axes. Tạo bằng \texttt{fig, ax = plt.subplots()} rồi gọi phương thức của \texttt{ax}. Chọn loại biểu đồ theo câu hỏi cần trả lời (Bảng~\ref{tab:plot-types}); luôn vẽ dữ liệu trước khi xây dựng mô hình.
+    \item SciPy bổ sung thống kê (\texttt{scipy.stats}) và tối ưu hóa (\texttt{scipy.optimize}). Cực tiểu hóa một hàm mất mát chính là cách các mô hình học máy được huấn luyện.
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{Bài tập}
+% ---------------------------------------------------------
+\begin{enumerate}
+    \item Tạo ma trận $5 \times 5$ các số ngẫu nhiên chuẩn tắc với \texttt{default\_rng(0)}. Thay mọi giá trị âm bằng 0, rồi tính tổng theo từng dòng và từng cột.
+    \item Giải thích kết quả in ra của đoạn lệnh \texttt{a = np.arange(5); b = a[1:3]; b[0] = 100; print(a)}. Sửa đoạn lệnh để \texttt{a} không bị thay đổi.
+    \item Không dùng vòng lặp, chuẩn hóa z-score từng cột của \texttt{arr2D}: trừ trung bình cột rồi chia cho độ lệch chuẩn cột. Kiểm tra lại bằng \texttt{StandardScaler}.
+    \item Giải hệ $2x + y = 5$, $x - 3y = -1$ bằng tay và bằng \texttt{np.linalg.solve}.
+    \item Với \texttt{df\_stock}, thêm cột \texttt{Change} $=$ \texttt{Close} $-$ \texttt{Open}, rồi lọc các phiên có \texttt{Change} dương và \texttt{Volume} trên 15000.
+    \item Tạo bảng đơn hàng gồm mã khách và số tiền, bảng khách hàng gồm mã khách và thành phố. Dùng \texttt{merge} rồi \texttt{groupby} để tính tổng tiền theo thành phố. So sánh kết quả của \texttt{how="inner"} và \texttt{how="left"} khi có đơn hàng không tìm thấy khách.
+    \item Vẽ trên cùng một vùng vẽ đường giá \texttt{Close} của \texttt{df\_stock} và đường trung bình trượt 3 phiên \texttt{df\_stock["Close"].rolling(3).mean()}. Thêm tiêu đề, nhãn trục và chú giải. Vì sao đường trung bình trượt thiếu hai điểm đầu?
+    \item Với dữ liệu giờ tự học và điểm thi ở Mục~\ref{sec:matplotlib}, tính hệ số tương quan bằng \texttt{stats.pearsonr}, rồi dùng \texttt{optimize.minimize} tìm đường thẳng $y = wx + b$ có MSE nhỏ nhất. Vẽ đường thẳng đó lên biểu đồ phân tán. So sánh $w$ tìm được với hệ số $0{,}7$ đã dùng để sinh dữ liệu.
+\end{enumerate}
+
+% ---------------------------------------------------------
+\section*{Tài liệu tham khảo của chương}
+\addcontentsline{toc}{section}{Tài liệu tham khảo của chương}
+% ---------------------------------------------------------
+\begin{enumerate}
+    \item Anscombe, F. J. (1973). Graphs in Statistical Analysis. \textit{The American Statistician}, 27(1), 17--21.
+    \item Harris, C. R. et al. (2020). Array programming with NumPy. \textit{Nature}, 585, 357--362.
+    \item Hunter, J. D. (2007). Matplotlib: A 2D Graphics Environment. \textit{Computing in Science \& Engineering}, 9(3), 90--95.
+    \item McKinney, W. (2010). Data Structures for Statistical Computing in Python. \textit{Proceedings of the 9th Python in Science Conference}, 56--61.
+    \item McKinney, W. (2022). \textit{Python for Data Analysis} (3rd ed.). O'Reilly Media.
+    \item Sarkar, D., Bali, R., \& Sharma, T. (2018). \textit{Practical Machine Learning with Python}, Chương 2--3. Apress.
+    \item Virtanen, P. et al. (2020). SciPy 1.0: Fundamental Algorithms for Scientific Computing in Python. \textit{Nature Methods}, 17, 261--272.
+    \item Waskom, M. L. (2021). seaborn: statistical data visualization. \textit{Journal of Open Source Software}, 6(60), 3021.
+    \item Wickham, H. (2011). The Split-Apply-Combine Strategy for Data Analysis. \textit{Journal of Statistical Software}, 40(1), 1--29.
+\end{enumerate}

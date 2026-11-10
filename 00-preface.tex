@@ -1,0 +1,84 @@
+% =========================================================
+% LOI NOI DAU
+% =========================================================
+
+\chapter*{Lời nói đầu}
+\addcontentsline{toc}{chapter}{Lời nói đầu}
+\markboth{Lời nói đầu}{Lời nói đầu}
+
+Giáo trình \textit{Lập trình Python cho Máy học} được biên soạn cho sinh viên đại học năm thứ hai, thứ ba các ngành Công nghệ thông tin, Khoa học dữ liệu và các ngành kỹ thuật có sử dụng dữ liệu. Mục tiêu của giáo trình là giúp người học đi trọn con đường từ những dòng lệnh Python đầu tiên đến việc tự xây dựng, đánh giá và giải thích một mô hình học máy trên dữ liệu thực.
+
+\paragraph{Kiến thức cần có.} Người học không cần biết Python trước. Về toán, cần nắm: đại số tuyến tính (vector, ma trận, phép nhân ma trận), giải tích (đạo hàm, đạo hàm riêng, quy tắc dây chuyền) và xác suất thống kê cơ bản (trung bình, phương sai, phân phối chuẩn, công thức Bayes). Những công cụ toán sâu hơn như trị riêng, vector riêng hay phân tích giá trị suy biến được nhắc lại ngay tại chương sử dụng chúng.
+
+\section*{Cấu trúc giáo trình}
+
+Giáo trình gồm 13 chương, chia thành bốn phần. Trình tự các chương được sắp theo \textbf{quan hệ phụ thuộc kiến thức}: mỗi khái niệm được định nghĩa trước khi được sử dụng. Bảng~\ref{tab:preface-roadmap} liệt kê nội dung và các chương cần học trước của từng chương.
+
+\begin{table}[tbp]
+\centering
+\small
+\begin{tabular}{|c|>{\raggedright\arraybackslash}p{4.3cm}|>{\raggedright\arraybackslash}p{6.2cm}|c|}
+\hline
+\textbf{Chương} & \textbf{Tên chương} & \textbf{Nội dung chính} & \textbf{Cần học trước} \\
+\hline
+\multicolumn{4}{|l|}{\textbf{Phần I. Nền tảng lập trình Python}} \\ \hline
+\ref{chap:intro} & Giới thiệu về Python & Lịch sử, cài đặt Python và Anaconda & --- \\ \hline
+\ref{chap:python-basics} & Cú pháp Python cơ bản & Kiểu dữ liệu, toán tử, cấu trúc dữ liệu, vòng lặp, hàm & \ref{chap:intro} \\ \hline
+\ref{chap:oop} & Lập trình hướng đối tượng & Lớp, kế thừa, giao diện \texttt{fit}/\texttt{predict} & \ref{chap:python-basics} \\ \hline
+\ref{chap:numpy-pandas} & NumPy, Pandas và Matplotlib & Mảng, vector hóa, bảng dữ liệu, trực quan hóa & \ref{chap:python-basics} \\ \hline
+\multicolumn{4}{|l|}{\textbf{Phần II. Dữ liệu và học có giám sát}} \\ \hline
+\ref{chap:preprocessing} & Tiền xử lý dữ liệu & Khái niệm học máy; làm sạch, mã hóa, chuẩn hóa, tạo và chọn đặc trưng & \ref{chap:oop}, \ref{chap:numpy-pandas} \\ \hline
+\ref{chap:regression} & Hồi quy & Bình phương tối thiểu, Gradient Descent, quá khớp, chính quy hóa & \ref{chap:preprocessing} \\ \hline
+\ref{chap:classify} & Phân lớp & KNN, Naive Bayes, hồi quy logistic, cây quyết định, SVM & \ref{chap:regression} \\ \hline
+\ref{chap:validation} & Đánh giá và lựa chọn mô hình & Lỗi tổng quát hóa, kiểm định chéo, độ đo, tìm siêu tham số & \ref{chap:regression}, \ref{chap:classify} \\ \hline
+\ref{chap:ensemble} & Học kết hợp & Bagging, Random Forest, AdaBoost, Gradient Boosting & \ref{chap:classify}, \ref{chap:validation} \\ \hline
+\multicolumn{4}{|l|}{\textbf{Phần III. Học không giám sát}} \\ \hline
+\ref{chap:reduce-dimension} & Giảm chiều dữ liệu & SVD, PCA, LDA, Kernel PCA, t-SNE & \ref{chap:classify}, \ref{chap:validation} \\ \hline
+\ref{chap:clustering} & Phân cụm & K-Means, Fuzzy C-Means, phân cấp, DBSCAN, Mean-shift & \ref{chap:preprocessing}, \ref{chap:reduce-dimension} \\ \hline
+\multicolumn{4}{|l|}{\textbf{Phần IV. Mạng nơ-ron và thực hành tổng hợp}} \\ \hline
+\ref{chap:neural-network} & Mạng nơ-ron nhân tạo & Perceptron, Adaline, MLP, lan truyền ngược, PyTorch & \ref{chap:classify}, \ref{chap:validation} \\ \hline
+\ref{chap:labs} & Thực hành tổng hợp & Bảy bài thực hành trên dữ liệu thực & \ref{chap:preprocessing}--\ref{chap:neural-network} \\ \hline
+\end{tabular}
+\caption{Nội dung và quan hệ phụ thuộc giữa các chương}
+\label{tab:preface-roadmap}
+\end{table}
+
+\section*{Vì sao các chương được sắp theo trình tự này}
+
+\begin{itemize}
+    \item \textbf{Công cụ trước, thuật toán sau.} Phần I trang bị đủ Python, lập trình hướng đối tượng, NumPy, Pandas và Matplotlib để người học đọc hiểu mọi đoạn mã ở các phần sau. Chương~\ref{chap:oop} giới thiệu sớm giao diện \texttt{fit}/\texttt{predict}, vì đó là cách mọi mô hình của scikit-learn vận hành.
+    \item \textbf{Dữ liệu trước mô hình.} Mọi mô hình đều nhận đầu vào là một ma trận số, nên Phần II mở đầu bằng tiền xử lý dữ liệu. Chương~\ref{chap:preprocessing} cũng là nơi định nghĩa học máy và thống nhất hệ thống ký hiệu dùng cho toàn bộ giáo trình.
+    \item \textbf{Hồi quy trước phân lớp.} Hồi quy tuyến tính là bối cảnh đơn giản nhất để giới thiệu hàm mất mát, Gradient Descent, quá khớp và chính quy hóa. Phân lớp dùng lại toàn bộ bộ máy đó: hồi quy logistic chính là mô hình tuyến tính thêm hàm sigmoid và hàm mất mát entropy chéo.
+    \item \textbf{Đánh giá ngay sau hai bài toán có giám sát.} Khi đã có trong tay các mô hình hồi quy và phân lớp, người học mới thấy rõ nhu cầu so sánh chúng một cách khách quan. Chương~\ref{chap:validation} hệ thống hóa cách chia dữ liệu, các độ đo và cách tìm siêu tham số. Từ Chương~\ref{chap:ensemble} trở đi, mọi mô hình đều được đánh giá và tinh chỉnh theo quy trình này.
+    \item \textbf{Học kết hợp sau đánh giá.} Bagging giảm phương sai, boosting giảm độ chệch: hai khái niệm được định nghĩa chặt chẽ ở Chương~\ref{chap:validation}. Random Forest được xây dựng trên cây quyết định của Chương~\ref{chap:classify}.
+    \item \textbf{Giảm chiều trước phân cụm.} Giảm chiều là chiếc cầu nối giữa hai loại học. LDA dùng nhãn lớp như một bộ phân lớp, còn PCA không dùng nhãn. Ngoài ra, PCA còn là công cụ để trực quan hóa kết quả phân cụm ở Chương~\ref{chap:clustering}.
+    \item \textbf{Mạng nơ-ron sau cùng.} Một nơ-ron với hàm sigmoid chính là hồi quy logistic. Huấn luyện mạng nơ-ron là Gradient Descent theo lô nhỏ, với gradient được tính tự động bằng lan truyền ngược. Ví dụ tính tay ở Chương~\ref{chap:regression} và~\ref{chap:classify} được kiểm chứng lại bằng PyTorch ở Chương~\ref{chap:neural-network}.
+    \item \textbf{Thực hành tổng hợp.} Chương~\ref{chap:labs} đặt các thuật toán vào quy trình làm việc hoàn chỉnh trên dữ liệu thực, kèm nhận xét về những lỗi phương pháp luận thường gặp.
+\end{itemize}
+
+Giảng viên có thể linh hoạt ở hai chỗ. Người học đã biết Python có thể đọc lướt Phần I. Chương~\ref{chap:reduce-dimension} và Chương~\ref{chap:clustering} chỉ phụ thuộc nhau ở phần trực quan hóa, nên có thể dạy theo thứ tự đảo ngược.
+
+\section*{Cấu trúc của mỗi chương}
+
+Các chương về thuật toán được viết theo cùng một khung:
+\begin{enumerate}
+    \item \textbf{Mục tiêu}: những gì người học làm được sau chương.
+    \item \textbf{Khởi nguồn}: bối cảnh lịch sử và câu hỏi mà phương pháp ra đời để trả lời.
+    \item \textbf{Lý thuyết và ví dụ tính tay}: công thức được minh họa trên bộ dữ liệu đủ nhỏ để tính bằng giấy bút.
+    \item \textbf{Mã nguồn Python}: cài đặt lại ví dụ tính tay, sau đó dùng thư viện trên dữ liệu thực. Mọi con số trong ví dụ tính tay đều được kiểm chứng bằng mã nguồn đi kèm.
+    \item \textbf{Tóm tắt, bài tập và tài liệu tham khảo}.
+\end{enumerate}
+
+\section*{Quy ước trình bày}
+
+\begin{itemize}
+    \item \textbf{Ký hiệu toán học} được thống nhất ở Mục~\ref{sec:ml-basics}: $n$ là số mẫu, $d$ là số đặc trưng, $\mathbf{X}$ là ma trận dữ liệu, $\mathbf{y}$ là vector nhãn, $\mathbf{w}$ và $b$ là trọng số và hệ số chặn, $\hat{y}$ là giá trị dự đoán.
+    \item \textbf{Số thập phân} trong văn bản dùng dấu phẩy theo chuẩn tiếng Việt ($0{,}1$); trong mã nguồn dùng dấu chấm theo cú pháp Python (\texttt{0.1}).
+    \item \textbf{Chú thích và chuỗi ký tự trong mã nguồn} được viết tiếng Việt không dấu, để mã chạy được trên mọi môi trường và không lỗi khi in.
+    \item \textbf{Thuật ngữ} được dùng bằng tiếng Việt, kèm thuật ngữ tiếng Anh trong ngoặc ở lần xuất hiện đầu tiên.
+\end{itemize}
+
+\vspace{1em}
+\begin{flushright}
+\textit{Nhóm tác giả}
+\end{flushright}
