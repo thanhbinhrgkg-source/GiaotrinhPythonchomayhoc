@@ -1,54 +1,698 @@
-\chapter{Hồi quy tuyến tính \\ (Linear Regression)}
-Hồi quy tuyến tính là một trong những thuật toán học có giám sát (Supervised Learning) cơ bản và phổ biến nhất trong Machine Learning, dùng để dự đoán giá trị đầu ra liên tục.
+% =========================================================
+% CHUONG: HOI QUY (REGRESSION)
+% Hinh: chep anh vao images/ dung ten trong \hinhchuachen la tu hien.
+% =========================================================
 
-\section{Mô hình Hồi quy tuyến tính đơn biến}
+\chapter{Hồi quy \\ (Regression)}
+\label{chap:regression}
+
+Hồi quy (regression) là bài toán \textbf{học có giám sát} (supervised learning) trong đó biến cần dự đoán là một \textbf{giá trị số liên tục}: giá nhà, nhiệt độ ngày mai, doanh thu tháng tới, lượng điện tiêu thụ\ldots{} Trong bảng phân công kế hoạch, nhóm thuật toán này gồm \textbf{Linear Regression} và mở rộng sang \textbf{chuỗi thời gian} (time series). Đây cũng là chương đầu tiên ta sử dụng dữ liệu đã được tiền xử lý ở Chương~\ref{chap:preprocessing} để huấn luyện một mô hình thực sự.
+
+\noindent Sau khi học xong chương này, người học có khả năng:
+\begin{itemize}
+    \item Trình bày nguồn gốc lịch sử của phương pháp bình phương tối thiểu và khái niệm ``hồi quy''.
+    \item Xây dựng mô hình hồi quy tuyến tính đơn biến, đa biến; tự tính tay nghiệm bình phương tối thiểu.
+    \item Hiểu và cài đặt Gradient Descent ở ba dạng batch, stochastic, mini-batch; tính tay một epoch theo từng phần tử và theo dạng ma trận; nhận biết và khắc phục hiện tượng phân kỳ.
+    \item Nhận biết quá khớp và áp dụng hồi quy đa thức, Ridge, Lasso.
+    \item Xử lý ngoại lai bằng hồi quy bền vững (RANSAC, Huber) và chẩn đoán mô hình bằng biểu đồ phần dư.
+    \item Xây dựng mô hình dự báo chuỗi thời gian bằng đặc trưng trễ (lag features).
+    \item Hoàn thiện mô hình dự đoán giá nhà trên bộ dữ liệu Ames Housing.
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{Khởi nguồn của hồi quy}
+% ---------------------------------------------------------
+
+\subsection{Phương pháp bình phương tối thiểu}
+
+Năm 1805, nhà toán học Pháp Adrien-Marie Legendre công bố \textit{phương pháp bình phương tối thiểu} (méthode des moindres carrés) trong phụ lục của một công trình xác định quỹ đạo sao chổi. Năm 1809, Carl Friedrich Gauss trình bày cùng phương pháp trong \textit{Theoria Motus} và khẳng định đã dùng nó từ năm 1795 để dự đoán vị trí tiểu hành tinh Ceres; cuộc tranh chấp quyền ưu tiên giữa hai ông là một trong những tranh chấp nổi tiếng nhất lịch sử toán học. Gauss còn chỉ ra rằng nếu sai số tuân theo phân phối chuẩn thì nghiệm bình phương tối thiểu chính là ước lượng hợp lý nhất --- nền tảng thống kê của hồi quy hiện đại.
+
+\subsection{Vì sao gọi là ``hồi quy''?}
+
+Thuật ngữ \textit{regression} đến từ nhà khoa học Anh Francis Galton. Năm 1886, khi nghiên cứu chiều cao của cha mẹ và con cái, Galton nhận thấy con của những cha mẹ rất cao thường thấp hơn cha mẹ, còn con của những cha mẹ rất thấp thường cao hơn --- chiều cao có xu hướng ``quay về mức trung bình'' (\textit{regression towards mediocrity}). Học trò của ông là Karl Pearson sau đó hình thức hóa hệ số tương quan và hồi quy tuyến tính. Ngày nay, ``hồi quy'' chỉ chung mọi bài toán dự đoán giá trị liên tục, bất kể có hiện tượng ``quay về trung bình'' hay không.
+
+\hinhchuachen{ch-regression-galton.png}{Dữ liệu chiều cao cha mẹ -- con cái của Galton (1886), gồm 928 cặp (số liệu từ gói \texttt{HistData} của R), và đường hồi quy có hệ số góc 0,65 --- nhỏ hơn 1 nên con của cha mẹ rất cao hoặc rất thấp có xu hướng quay về mức trung bình. Các điểm được rải nhẹ vì số liệu gốc đã làm tròn theo khoảng.}{fig:galton}
+
+% ---------------------------------------------------------
+\section{Hồi quy tuyến tính đơn biến}
+% ---------------------------------------------------------
 
 \begin{definition}[Hồi quy tuyến tính đơn biến]
-Cho tập dữ liệu $(x_1, y_1), (x_2, y_2), \dots, (x_n, y_n)$. Mô hình biểu diễn mối quan hệ giữa biến độc lập $x$ và biến phụ thuộc $y$ theo dạng tuyến tính:
+Cho tập dữ liệu $\{(x_i, y_i)\}_{i=1}^{n}$. Mô hình hồi quy tuyến tính đơn biến giả định
 \begin{equation}
-    y = w_0 + w_1 x + \epsilon
+    y = w_0 + w_1 x + \varepsilon,
 \end{equation}
-trong đó $w_0$ là hệ số chặn (intercept), $w_1$ là hệ số góc (slope), và $\epsilon$ là sai số ngẫu nhiên.
+trong đó $w_0$ là hệ số chặn (intercept), $w_1$ là hệ số góc (slope) và $\varepsilon$ là sai số ngẫu nhiên. Giá trị dự đoán là $\hat{y} = w_0 + w_1 x$.
 \end{definition}
 
-\section{Hàm mất mát (Loss Function)}
+\subsection{Hàm mất mát và nghiệm bình phương tối thiểu}
 
-Để tìm các hệ số $w_0, w_1$ tối ưu, người ta sử dụng sai số bình phương trung bình (Mean Squared Error - MSE):
-
+Để chọn $(w_0, w_1)$, ta cực tiểu tổng bình phương sai số (Sum of Squared Errors -- SSE):
 \begin{equation}
-    J(w_0, w_1) = \frac{1}{2n} \sum_{i=1}^{n} \left( y_i - (w_0 + w_1 x_i) \right)^2
+    \mathrm{SSE}(w_0, w_1) = \sum_{i=1}^{n} \big(y_i - (w_0 + w_1 x_i)\big)^2 .
+\end{equation}
+Lấy đạo hàm riêng theo $w_0$, $w_1$ và cho bằng 0, ta được nghiệm dạng đóng:
+\begin{equation}
+    w_1 = \frac{\sum_{i}(x_i - \bar{x})(y_i - \bar{y})}{\sum_{i}(x_i - \bar{x})^2} = \frac{S_{xy}}{S_{xx}}, \qquad
+    w_0 = \bar{y} - w_1 \bar{x}.
+    \label{eq:ols-simple}
 \end{equation}
 
-Mục tiêu của bài toán là tìm $(w_0, w_1)$ sao cho $J(w_0, w_1)$ đạt giá trị nhỏ nhất.
+\begin{example}[Tính tay hồi quy tuyến tính]
+Cho 5 điểm dữ liệu:
+\end{example}
 
-\section{Cài đặt Hồi quy tuyến tính với Scikit-Learn}
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|c|c|}
+\hline
+$i$ & $x_i$ & $y_i$ & $x_i - \bar{x}$ & $y_i - \bar{y}$ & $(x_i - \bar{x})(y_i - \bar{y})$ & $(x_i - \bar{x})^2$ \\
+\hline
+1 & 1 & 2.1 & $-2$ & $-3.94$ & 7.88 & 4 \\ \hline
+2 & 2 & 3.9 & $-1$ & $-2.14$ & 2.14 & 1 \\ \hline
+3 & 3 & 6.1 & 0 & 0.06 & 0 & 0 \\ \hline
+4 & 4 & 8.2 & 1 & 2.16 & 2.16 & 1 \\ \hline
+5 & 5 & 9.9 & 2 & 3.86 & 7.72 & 4 \\ \hline
+\multicolumn{5}{|r|}{\textbf{Tổng}} & $S_{xy} = 19.9$ & $S_{xx} = 10$ \\
+\hline
+\end{tabular}
+\caption{Bảng tính hồi quy tuyến tính đơn biến ($\bar{x} = 3$, $\bar{y} = 6{,}04$)}
+\label{tab:ols}
+\end{table}
 
-Dưới đây là đoạn code Python minh họa việc xây dựng mô hình Linear Regression trên tập dữ liệu thực tế:
+Theo (\ref{eq:ols-simple}): $w_1 = 19{,}9/10 = 1{,}99$ và $w_0 = 6{,}04 - 1{,}99 \times 3 = 0{,}07$. Mô hình thu được là $\hat{y} = 0{,}07 + 1{,}99x$, và dự đoán cho $x = 6$ là $\hat{y} = 12{,}01$. Tổng bình phương sai số còn lại $\mathrm{SSE} = 0{,}071$, tức $\mathrm{MSE} = 0{,}0142$; hệ số xác định $R^2 \approx 0{,}9982$ cho thấy đường thẳng giải thích gần như toàn bộ biến thiên của $y$.
 
-\begin{lstlisting}[caption={Thực thi Linear Regression bằng Scikit-Learn}]
+\begin{lstlisting}[caption={Hồi quy tuyến tính: tự tính và dùng scikit-learn}]
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
-# 1. Tao du lieu gia dinh
-X = np.array([[1], [2], [3], [4], [5]])
+x = np.array([1, 2, 3, 4, 5], dtype=float)
 y = np.array([2.1, 3.9, 6.1, 8.2, 9.9])
 
-# 2. Khoi tao va huan luyen mo hinh
+# 1) Tu tinh theo cong thuc binh phuong toi thieu
+w1 = ((x - x.mean()) * (y - y.mean())).sum() / ((x - x.mean())**2).sum()
+w0 = y.mean() - w1 * x.mean()
+print(w0, w1)                    # 0.07  1.99
+
+# 2) scikit-learn (X phai la ma tran 2 chieu)
 model = LinearRegression()
-model.fit(X, y)
-
-# 3. In ket qua trong so w0 va w1
-print("He so w1 (slope):", model.coef_[0])
-print("He so w0 (intercept):", model.intercept_)
-
-# 4. Du doan gia tri moi
-y_pred = model.predict([[6]])
-print("Du doan cho X=6:", y_pred[0])
+model.fit(x.reshape(-1, 1), y)
+print(model.intercept_, model.coef_)   # 0.07  [1.99]
+print(model.predict([[6]]))            # [12.01]
+print(model.score(x.reshape(-1, 1), y))  # R^2 = 0.9982
 \end{lstlisting}
 
-\section{Tóm tắt chương}
+\hinhchuachen{ch-regression-line.png}{Năm điểm dữ liệu và đường hồi quy $\hat{y} = 0{,}07 + 1{,}99x$; các đoạn thẳng đứng là phần dư $y_i - \hat{y}_i$. Hình bên phải phóng to các phần dư vì chúng rất nhỏ so với thang đo của $y$.}{fig:reg-line}
+
+% ---------------------------------------------------------
+\section{Hồi quy tuyến tính đa biến}
+% ---------------------------------------------------------
+
+Khi có $d$ đặc trưng, mô hình trở thành
+\begin{equation}
+    \hat{y} = w_0 + w_1 x_1 + \dots + w_d x_d = \mathbf{w}^\top \tilde{\mathbf{x}},
+\end{equation}
+với $\tilde{\mathbf{x}} = (1, x_1, \dots, x_d)$. Gom $n$ mẫu thành ma trận thiết kế $\mathbf{X} \in \mathbb{R}^{n \times (d+1)}$ (cột đầu toàn số 1), hàm mất mát $\|\mathbf{y} - \mathbf{X}\mathbf{w}\|^2$ có nghiệm theo \textbf{phương trình chuẩn} (normal equation):
+\begin{equation}
+    \mathbf{w}^{*} = (\mathbf{X}^\top \mathbf{X})^{-1} \mathbf{X}^\top \mathbf{y}.
+    \label{eq:normal}
+\end{equation}
+Trong thực tế, thư viện không nghịch đảo ma trận trực tiếp mà dùng phân rã QR hoặc SVD (xem chương Giảm chiều dữ liệu) để ổn định số học. Khi các đặc trưng tương quan mạnh với nhau (đa cộng tuyến), $\mathbf{X}^\top\mathbf{X}$ gần suy biến và hệ số trở nên rất bất ổn --- đó là động lực của Ridge ở mục sau. Đây cũng là lý do bẫy biến giả (Chương~\ref{chap:preprocessing}) gây lỗi: các cột one-hot cộng lại bằng cột hệ số chặn.
+
+\begin{example}[Tính tay phương trình chuẩn với hai đặc trưng]
+Cho 4 mẫu trong Bảng~\ref{tab:normal-eq}. Tìm mô hình $\hat{y} = \beta_0 + \beta_1 x_1 + \beta_2 x_2$ và dự đoán $y$ tại $x_1 = 3$, $x_2 = 7$.
+\end{example}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{bias} & $x_1$ & $x_2$ & $y$ \\
+\hline
+1 & 7 & 3 & 9 \\ \hline
+1 & 4 & 1 & 15 \\ \hline
+1 & 5 & 6 & 21 \\ \hline
+1 & 9 & 8 & 37 \\ \hline
+\end{tabular}
+\caption{Dữ liệu ví dụ phương trình chuẩn; cột bias toàn số 1 ứng với hệ số chặn $\beta_0$}
+\label{tab:normal-eq}
+\end{table}
+
+\noindent\textbf{Bước 1 -- lập các ma trận.} Các phần tử của $\mathbf{X}^\top\mathbf{X}$ và $\mathbf{X}^\top\mathbf{y}$ chính là các tổng quen thuộc: $n = 4$, $\sum x_1 = 25$, $\sum x_2 = 18$, $\sum x_1^2 = 171$, $\sum x_1 x_2 = 127$, $\sum x_2^2 = 110$, $\sum y = 82$, $\sum x_1 y = 561$, $\sum x_2 y = 464$:
+\[
+    \mathbf{X}^\top\mathbf{X} =
+    \begin{pmatrix} 1 & 1 & 1 & 1 \\ 7 & 4 & 5 & 9 \\ 3 & 1 & 6 & 8 \end{pmatrix}
+    \begin{pmatrix} 1 & 7 & 3 \\ 1 & 4 & 1 \\ 1 & 5 & 6 \\ 1 & 9 & 8 \end{pmatrix}
+    = \begin{pmatrix} 4 & 25 & 18 \\ 25 & 171 & 127 \\ 18 & 127 & 110 \end{pmatrix}, \qquad
+    \mathbf{X}^\top\mathbf{y} = \begin{pmatrix} 82 \\ 561 \\ 464 \end{pmatrix}.
+\]
+
+\noindent\textbf{Bước 2 -- nghịch đảo.} Với $\det(\mathbf{X}^\top\mathbf{X}) = 870$, nghịch đảo bằng ma trận phụ hợp chia cho định thức:
+\[
+    (\mathbf{X}^\top\mathbf{X})^{-1} = \frac{1}{870}\begin{pmatrix} 2681 & -464 & 97 \\ -464 & 116 & -58 \\ 97 & -58 & 59 \end{pmatrix}
+    \approx \begin{pmatrix} 3{,}0816 & -0{,}5333 & 0{,}1115 \\ -0{,}5333 & 0{,}1333 & -0{,}0667 \\ 0{,}1115 & -0{,}0667 & 0{,}0678 \end{pmatrix}.
+\]
+\textit{Kiểm tra nhanh:} $\mathbf{X}^\top\mathbf{X}$ đối xứng và xác định dương, nên nghịch đảo của nó cũng \textbf{đối xứng} và có mọi phần tử trên \textbf{đường chéo dương}. Nếu tính ra một phần tử chéo âm (chẳng hạn $-0{,}0678$ thay vì $0{,}0678$) thì chắc chắn đã có sai sót.
+
+\noindent\textbf{Bước 3 -- hệ số:}
+\[
+    \boldsymbol{\beta} = (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y}
+    = \frac{1}{870}\begin{pmatrix} 4546 \\ 116 \\ 2792 \end{pmatrix}
+    \approx \begin{pmatrix} 5{,}2253 \\ 0{,}1333 \\ 3{,}2092 \end{pmatrix}.
+\]
+
+\noindent\textbf{Bước 4 -- dự đoán:} $\hat{y} = 5{,}2253 + 0{,}1333 \times 3 + 3{,}2092 \times 7 \approx 28{,}09$.
+
+Với chỉ 4 mẫu và 3 tham số, mô hình giải thích được $R^2 \approx 0{,}716$ phương sai của $y$ trên chính tập huấn luyện --- ví dụ chỉ nhằm minh họa quy trình tính, không nhằm đánh giá chất lượng mô hình.
+
+\begin{lstlisting}[caption={Kiểm tra ví dụ phương trình chuẩn}]
+import numpy as np
+from sklearn.linear_model import LinearRegression
+
+X = np.array([[7, 3], [4, 1], [5, 6], [9, 8]])
+y = np.array([9, 15, 21, 37])
+Xb = np.c_[np.ones(len(X)), X]               # them cot 1 cho he so chan
+print(Xb.T @ Xb)                             # [[4 25 18] [25 171 127] [18 127 110]]
+beta = np.linalg.solve(Xb.T @ Xb, Xb.T @ y)  # on dinh hon np.linalg.inv
+print(beta.round(4))                         # [5.2253 0.1333 3.2092]
+print(beta @ [1, 3, 7])                      # 28.0897
+
+model = LinearRegression().fit(X, y)
+print(model.intercept_, model.coef_, model.predict([[3, 7]]))
+print(model.score(X, y))                     # R^2 = 0.7157
+\end{lstlisting}
+
+\paragraph{Diễn giải hệ số.} $w_j$ là mức thay đổi trung bình của $\hat{y}$ khi $x_j$ tăng 1 đơn vị và các đặc trưng khác giữ nguyên. Nếu các đặc trưng đã được chuẩn hóa bằng \texttt{StandardScaler}, độ lớn $|w_j|$ có thể dùng để so sánh mức ảnh hưởng tương đối giữa các đặc trưng.
+
+\paragraph{Các giả định kinh điển.} (1) Quan hệ tuyến tính; (2) sai số độc lập; (3) phương sai sai số không đổi (homoscedasticity); (4) sai số có phân phối chuẩn (cần cho kiểm định thống kê); (5) không có đa cộng tuyến hoàn hảo. Biểu đồ phần dư -- giá trị dự đoán là công cụ trực quan để kiểm tra các giả định này.
+
+% ---------------------------------------------------------
+\section{Gradient Descent}
+% ---------------------------------------------------------
+
+Với dữ liệu lớn hoặc mô hình không có nghiệm đóng (hồi quy logistic, mạng nơ-ron), ta dùng \textbf{Gradient Descent} --- phương pháp do Augustin-Louis Cauchy đề xuất từ năm 1847. Ý tưởng: đứng tại một điểm trên mặt hàm mất mát, đi một bước nhỏ theo hướng \textbf{ngược gradient} (hướng giảm nhanh nhất).
+
+Với hàm mất mát $J(w_0, w_1) = \frac{1}{2n}\sum_i (\hat{y}_i - y_i)^2$ và tốc độ học $\eta$:
+\begin{align}
+    \frac{\partial J}{\partial w_0} &= \frac{1}{n}\sum_i (\hat{y}_i - y_i), &
+    \frac{\partial J}{\partial w_1} &= \frac{1}{n}\sum_i (\hat{y}_i - y_i)\, x_i, \\
+    w_0 &\leftarrow w_0 - \eta \frac{\partial J}{\partial w_0}, &
+    w_1 &\leftarrow w_1 - \eta \frac{\partial J}{\partial w_1}.
+\end{align}
+
+\begin{example}[Ba bước Gradient Descent]
+Với dữ liệu ở Bảng~\ref{tab:ols}, khởi tạo $w_0 = w_1 = 0$ và $\eta = 0{,}05$:
+\end{example}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\textbf{Bước} & $\partial J / \partial w_0$ & $\partial J / \partial w_1$ & $w_0$ mới & $w_1$ mới \\
+\hline
+1 & $-6.0400$ & $-22.1000$ & 0.3020 & 1.1050 \\ \hline
+2 & $-2.4230$ & $-9.0390$ & 0.4232 & 1.5570 \\ \hline
+3 & $-0.9460$ & $-3.7041$ & 0.4704 & 1.7422 \\ \hline
+$\vdots$ & & & $\to 0.07$ & $\to 1.99$ \\ \hline
+\end{tabular}
+\caption{Gradient Descent hội tụ dần về nghiệm bình phương tối thiểu}
+\end{table}
+
+\begin{lstlisting}[caption={Cài đặt Gradient Descent cho hồi quy tuyến tính}]
+import numpy as np
+
+x = np.array([1, 2, 3, 4, 5], dtype=float)
+y = np.array([2.1, 3.9, 6.1, 8.2, 9.9])
+w0, w1, lr = 0.0, 0.0, 0.05
+
+for step in range(2000):
+    error = (w0 + w1 * x) - y
+    w0 -= lr * error.mean()
+    w1 -= lr * (error * x).mean()
+    if step < 3:
+        print(step + 1, round(w0, 4), round(w1, 4))
+print(round(w0, 4), round(w1, 4))     # ~0.07  ~1.99
+\end{lstlisting}
+
+\paragraph{Chọn tốc độ học.} $\eta$ quá nhỏ: hội tụ rất chậm; $\eta$ quá lớn: dao động hoặc phân kỳ. Các đặc trưng có thang đo chênh lệch làm mặt hàm mất mát bị ``kéo dài'', buộc phải chọn $\eta$ nhỏ --- đây là lý do thực tiễn quan trọng nhất của việc chuẩn hóa dữ liệu ở Chương~\ref{chap:preprocessing}. Các biến thể phổ biến: \textit{Stochastic GD} (mỗi bước dùng 1 mẫu, \texttt{SGDRegressor}) và \textit{Mini-batch GD} (mỗi bước dùng một nhóm nhỏ mẫu, dùng nhiều trong học sâu).
+
+\hinhchuachen{ch-regression-gd.png}{Đường đồng mức của hàm mất mát $J(w_0, w_1)$ và quỹ đạo của Gradient Descent với các tốc độ học khác nhau; ngôi sao là nghiệm tối ưu. Với dữ liệu này, Gradient Descent chỉ hội tụ khi $\eta < 0{,}169$.}{fig:gd}
+
+\subsection{Ba biến thể: batch, stochastic và mini-batch}
+\label{sec:gd-variants}
+
+Công thức cập nhật ở trên không đổi; các biến thể chỉ khác nhau ở \textbf{số mẫu dùng để ước lượng gradient} trong mỗi bước:
 \begin{itemize}
-    \item Bản chất mô hình Hồi quy tuyến tính và bài toán tối ưu hàm MSE.
-    \item Phương pháp hạ độ dốc (Gradient Descent) để cập nhật trọng số.
-    \item Thao tác huấn luyện mô hình bằng thư viện \texttt{scikit-learn}.
+    \item \textbf{Batch Gradient Descent}: mỗi bước dùng toàn bộ $n$ mẫu. Hướng đi chính xác nhất, nhưng mỗi bước tốn kém và cần toàn bộ dữ liệu trong bộ nhớ.
+    \item \textbf{Stochastic Gradient Descent} (SGD): mỗi bước dùng 1 mẫu. Mỗi bước rất rẻ nhưng hướng đi nhiễu; phù hợp với học trực tuyến.
+    \item \textbf{Mini-batch Gradient Descent}: mỗi bước dùng một \textbf{lô} (batch) gồm $B$ mẫu, tham số \texttt{batch\_size}. Đây là cách dung hòa: gradient ít nhiễu hơn SGD, tận dụng được phép tính ma trận, và là cách huấn luyện mặc định của mạng nơ-ron (thường $B$ từ 32 đến 256).
 \end{itemize}
+Một \textbf{epoch} là một lượt duyệt hết dữ liệu huấn luyện: với $n$ mẫu và lô $B$ mẫu, mỗi epoch gồm $\lceil n/B \rceil$ bước cập nhật. Batch Gradient Descent và SGD là hai trường hợp riêng của mini-batch, với $B = n$ và $B = 1$.
+
+\subsection{Ví dụ tính tay: mini-batch Gradient Descent với hai đặc trưng}
+\label{sec:minibatch-gd}
+
+\begin{example}[Mini-batch Gradient Descent cho hồi quy tuyến tính]
+Huấn luyện mô hình $\hat{y} = b + w_1 x_1 + w_2 x_2$ trên 5 mẫu ở Bảng~\ref{tab:minibatch-data} với \texttt{batch\_size} $= 3$: lô 1 gồm 3 mẫu đầu, lô 2 gồm 2 mẫu cuối. Khởi tạo $b = 0{,}3$; $w_1 = 0{,}2$; $w_2 = 0{,}1$; tốc độ học $\alpha = 0{,}1$.
+\end{example}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+\textbf{Lô} & \textbf{bias} & $x_1$ & $x_2$ & $y$ \textbf{(hồi quy)} & $y$ \textbf{(phân lớp)} \\
+\hline
+1 & 1 & 1 & 3 & 4 & 0 \\
+1 & 1 & 2 & 1 & 3 & 0 \\
+1 & 1 & 1 & 1 & 1 & 0 \\ \hline
+2 & 1 & 7 & 8 & 9 & 1 \\
+2 & 1 & 6 & 4 & 7 & 1 \\ \hline
+\end{tabular}
+\caption{Dữ liệu ví dụ mini-batch Gradient Descent. Cột bias luôn bằng 1, ứng với hệ số chặn $b$; cột nhãn phân lớp được dùng ở Chương~\ref{chap:classify}}
+\label{tab:minibatch-data}
+\end{table}
+
+Hàm mất mát là sai số bình phương trung bình trên một lô gồm $n$ mẫu, và đạo hàm theo từng tham số là
+\begin{gather}
+    L = \frac{1}{n}\sum_{i=1}^{n}(\hat{y}_i - y_i)^2, \\
+    \frac{\partial L}{\partial b} = \frac{2}{n}\sum_{i=1}^{n}(\hat{y}_i - y_i), \qquad
+    \frac{\partial L}{\partial w_j} = \frac{2}{n}\sum_{i=1}^{n}(\hat{y}_i - y_i)\,x_{ij}.
+\end{gather}
+Hệ số 2 xuất hiện vì ở đây dùng $\frac{1}{n}$ thay cho $\frac{1}{2n}$ như mục trước. Hai cách viết chỉ khác nhau một hằng số, tương đương với việc nhân đôi tốc độ học.
+
+\noindent\textbf{Lô 1 -- Bước 1: dự đoán.} $\hat{y}_1 = 0{,}3 \cdot 1 + 0{,}2 \cdot 1 + 0{,}1 \cdot 3 = 0{,}8$; tương tự $\hat{y}_2 = 0{,}8$ và $\hat{y}_3 = 0{,}6$. Sai lệch $\hat{y} - y = (-3{,}2;\ -2{,}2;\ -0{,}4)$.
+
+\noindent\textbf{Lô 1 -- Bước 2: tính gradient} ($n = 3$):
+\begin{align*}
+    \frac{\partial L}{\partial b} &= \tfrac{2}{3}\big[(-3{,}2) + (-2{,}2) + (-0{,}4)\big] = \tfrac{2}{3}(-5{,}8) \approx -3{,}8667,\\
+    \frac{\partial L}{\partial w_1} &= \tfrac{2}{3}\big[1 \cdot (-3{,}2) + 2 \cdot (-2{,}2) + 1 \cdot (-0{,}4)\big] = \tfrac{2}{3}(-8) \approx -5{,}3333,\\
+    \frac{\partial L}{\partial w_2} &= \tfrac{2}{3}\big[3 \cdot (-3{,}2) + 1 \cdot (-2{,}2) + 1 \cdot (-0{,}4)\big] = \tfrac{2}{3}(-12{,}2) \approx -8{,}1333.
+\end{align*}
+
+\noindent\textbf{Lô 1 -- Bước 3: cập nhật} theo quy tắc $\theta \leftarrow \theta - \alpha\,\partial L/\partial\theta$:
+\[
+    b = 0{,}3 + 0{,}3867 = 0{,}6867, \qquad
+    w_1 = 0{,}2 + 0{,}5333 = 0{,}7333, \qquad
+    w_2 = 0{,}1 + 0{,}8133 = 0{,}9133.
+\]
+Mọi gradient đều âm nên mọi trọng số đều tăng --- đúng hướng, vì mô hình đang dự đoán thấp hơn giá trị thật.
+
+\noindent\textbf{Lô 2} ($n = 2$, nên hệ số $\frac{2}{n} = 1$), dùng trọng số vừa cập nhật:
+\begin{align*}
+    \hat{y}_4 &= 0{,}6867 + 0{,}7333 \cdot 7 + 0{,}9133 \cdot 8 = 13{,}1267, & \hat{y}_4 - y_4 &= 4{,}1267,\\
+    \hat{y}_5 &= 0{,}6867 + 0{,}7333 \cdot 6 + 0{,}9133 \cdot 4 = 8{,}7400, & \hat{y}_5 - y_5 &= 1{,}7400,
+\end{align*}
+\begin{align*}
+    \frac{\partial L}{\partial b} &= 4{,}1267 + 1{,}74 = 5{,}8667,\\
+    \frac{\partial L}{\partial w_1} &= 7 \cdot 4{,}1267 + 6 \cdot 1{,}74 = 39{,}3267,\\
+    \frac{\partial L}{\partial w_2} &= 8 \cdot 4{,}1267 + 4 \cdot 1{,}74 = 39{,}9733.
+\end{align*}
+Cập nhật: $b = 0{,}6867 - 0{,}5867 = 0{,}1000$; $w_1 = 0{,}7333 - 3{,}9327 = -3{,}1993$; $w_2 = 0{,}9133 - 3{,}9973 = -3{,}0840$. Hai lô đã đi qua toàn bộ dữ liệu, nên đây là kết thúc epoch thứ nhất.
+
+\noindent\textit{Về làm tròn:} nếu làm tròn trọng số sau lô 1 thành 0,686; 0,73; 0,913 như khi tính tay, lô 2 cho $b = 0{,}1042$; $w_1 = -3{,}1708$; $w_2 = -3{,}0542$. Chênh lệch này chỉ do làm tròn, không phải do phương pháp.
+
+\paragraph{Dạng ma trận.} Ghép các mẫu của một lô thành ma trận $\mathbf{X}_B$ ($B$ dòng, cột đầu toàn số 1) và gom tham số thành $\mathbf{w} = (b, w_1, w_2)^\top$. Ba bước trên trở thành ba phép toán ma trận, đúng với mọi số đặc trưng:
+\begin{equation}
+    \hat{\mathbf{y}} = \mathbf{X}_B\mathbf{w}, \qquad
+    \nabla L = \frac{2}{B}\,\mathbf{X}_B^\top(\hat{\mathbf{y}} - \mathbf{y}_B), \qquad
+    \mathbf{w} \leftarrow \mathbf{w} - \alpha\,\nabla L .
+\end{equation}
+Với lô 1:
+\[
+    \begin{pmatrix} 1 & 1 & 3 \\ 1 & 2 & 1 \\ 1 & 1 & 1 \end{pmatrix}
+    \begin{pmatrix} 0{,}3 \\ 0{,}2 \\ 0{,}1 \end{pmatrix}
+    = \begin{pmatrix} 0{,}8 \\ 0{,}8 \\ 0{,}6 \end{pmatrix}, \qquad
+    \frac{2}{3}
+    \begin{pmatrix} 1 & 1 & 1 \\ 1 & 2 & 1 \\ 3 & 1 & 1 \end{pmatrix}
+    \begin{pmatrix} -3{,}2 \\ -2{,}2 \\ -0{,}4 \end{pmatrix}
+    = \begin{pmatrix} -3{,}8667 \\ -5{,}3333 \\ -8{,}1333 \end{pmatrix}.
+\]
+Ma trận thứ hai là $\mathbf{X}_B^\top$: mỗi dòng của nó là một cột đặc trưng, nên một phép nhân tính được $\sum_i(\hat{y}_i - y_i)\,x_{ij}$ cho mọi $j$ cùng lúc.
+
+\subsection{Đánh giá mô hình sau mỗi lần cập nhật}
+\label{sec:minibatch-eval}
+
+Để biết mỗi bước cập nhật có thực sự cải thiện mô hình hay không, ta đánh giá mô hình bằng MSE trên cả 5 mẫu sau mỗi lần cập nhật: trước khi học là 16,7; sau lô 1 giảm còn 4,373; nhưng sau lô 2 vọt lên 1016,3. Lô 2 có giá trị đặc trưng lớn (7 và 8) nên gradient lớn (khoảng 39), và với $\alpha = 0{,}1$ bước nhảy đi quá xa điểm cực tiểu: $w_1$ đổi từ $+0{,}73$ thành $-3{,}20$.
+
+Với hàm mất mát bậc hai, một bước Gradient Descent chỉ làm mất mát giảm ổn định khi
+\begin{equation}
+    \alpha < \frac{2}{\lambda_{\max}},
+\end{equation}
+trong đó $\lambda_{\max}$ là trị riêng lớn nhất của ma trận Hessian $\frac{2}{n}\mathbf{X}^\top\mathbf{X}$ --- đại lượng đo độ ``dốc'' nhất của mặt mất mát (xem trị riêng ở Chương~\ref{chap:reduce-dimension}). Lô 1 có $\lambda_{\max} \approx 11{,}84$, nên cần $\alpha < 0{,}169$: tốc độ học 0,1 an toàn. Lô 2 có $\lambda_{\max} \approx 164{,}5$, nên cần $\alpha < 0{,}0122$: tốc độ học 0,1 lớn gấp khoảng 8 lần ngưỡng. Ngưỡng ổn định phụ thuộc vào thang đo của dữ liệu --- đây là cơ sở toán học của lời khuyên chuẩn hóa đặc trưng.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+\textbf{Cấu hình} & \textbf{Epoch 0} & \textbf{Epoch 1} & \textbf{Epoch 2} & \textbf{Epoch 3} & \textbf{Epoch 50} \\
+\hline
+Dữ liệu gốc, $\alpha = 0{,}1$ & 16,70 & 1016,33 & 1560,54 & 633,12 & $\approx 1{,}7 \times 10^{24}$ \\ \hline
+Dữ liệu gốc, $\alpha = 0{,}01$ & 16,70 & 4,39 & 2,78 & 0,82 & 0,507 \\ \hline
+Chuẩn hóa z-score, $\alpha = 0{,}1$ & 26,89 & 6,59 & 2,85 & 1,38 & 0,461 \\ \hline
+\end{tabular}
+\caption{MSE trên toàn bộ 5 mẫu theo epoch. Nghiệm bình phương tối thiểu có MSE nhỏ nhất bằng 0,451; MSE ban đầu của dòng cuối khác vì cùng trọng số khởi tạo nhưng đặc trưng đã đổi thang đo}
+\label{tab:minibatch-epochs}
+\end{table}
+
+\hinhchuachen{ch-regression-minibatch.png}{MSE theo epoch của ví dụ mini-batch (thang log): với dữ liệu gốc, $\alpha = 0{,}1$ làm thuật toán phân kỳ; giảm $\alpha$ còn 0,01 hoặc chuẩn hóa đặc trưng đều giúp hội tụ về gần mức nhỏ nhất.}{fig:minibatch}
+
+Có hai cách khắc phục: \textbf{giảm tốc độ học}, hoặc \textbf{chuẩn hóa đặc trưng} (Chương~\ref{chap:preprocessing}) --- sau khi chuẩn hóa, cùng $\alpha = 0{,}1$ lại hội tụ nhanh. Trong thực tế còn dùng lịch giảm dần tốc độ học, hoặc các bộ tối ưu thích nghi như Adam (Kingma và Ba, 2015). Ví dụ này cũng không xáo trộn dữ liệu giữa các epoch; ảnh hưởng của việc đó được phân tích ở ví dụ phân lớp (Chương~\ref{chap:classify}).
+
+\begin{lstlisting}[caption={Mini-batch Gradient Descent dạng ma trận cho hồi quy tuyến tính}]
+import numpy as np
+
+# Cot dau toan so 1 ung voi he so chan b
+X = np.array([[1, 1, 3], [1, 2, 1], [1, 1, 1], [1, 7, 8], [1, 6, 4]], dtype=float)
+y = np.array([4, 3, 1, 9, 7], dtype=float)
+
+def minibatch_gd(X, y, w, lr=0.1, batch_size=3, epochs=1, verbose=False):
+    n = len(y)
+    for epoch in range(epochs):
+        for start in range(0, n, batch_size):
+            Xb = X[start:start + batch_size]
+            yb = y[start:start + batch_size]
+            y_hat = Xb @ w                              # buoc 1: du doan
+            grad = 2 / len(yb) * Xb.T @ (y_hat - yb)    # buoc 2: gradient cua MSE
+            w = w - lr * grad                           # buoc 3: cap nhat
+            if verbose:
+                print("grad", grad.round(4), "-> w", w.round(4))
+    return w
+
+def mse(X, w):
+    return ((X @ w - y) ** 2).mean()
+
+w0 = np.array([0.3, 0.2, 0.1])                          # b, w1, w2
+w = minibatch_gd(X, y, w0, verbose=True)
+# grad [-3.8667 -5.3333 -8.1333] -> w [0.6867 0.7333 0.9133]
+# grad [ 5.8667 39.3267 39.9733] -> w [ 0.1    -3.1993 -3.084 ]
+print(round(mse(X, w), 2))                              # 1016.33: phan ky
+
+w = minibatch_gd(X, y, w0, lr=0.01, epochs=50)
+print(round(mse(X, w), 3))                              # 0.507: hoi tu
+
+Xs = X.copy()                                           # chuan hoa z-score hai cot dac trung
+Xs[:, 1:] = (X[:, 1:] - X[:, 1:].mean(axis=0)) / X[:, 1:].std(axis=0)
+w = minibatch_gd(Xs, y, w0, lr=0.1, epochs=50)
+print(round(mse(Xs, w), 3))                             # 0.461: hoi tu
+\end{lstlisting}
+
+\noindent Trong đoạn mã trên, công thức gradient được viết tay. Ở Lab 8 (Mục~\ref{sec:torch-autograd}, Chương~\ref{chap:labs}), cùng ví dụ này được chạy lại bằng PyTorch: chỉ khai báo hàm mất mát MSE, máy tự tính gradient và cho đúng từng con số của lời giải tay ở trên.
+
+% ---------------------------------------------------------
+\section{Hồi quy đa thức, quá khớp và chính quy hóa}
+% ---------------------------------------------------------
+
+\subsection{Hồi quy đa thức}
+
+Khi quan hệ không tuyến tính, ta tạo thêm đặc trưng $x^2, x^3, \dots$ rồi vẫn dùng hồi quy tuyến tính (tuyến tính theo \textit{tham số}):
+\begin{equation}
+    \hat{y} = w_0 + w_1 x + w_2 x^2 + \dots + w_p x^p .
+\end{equation}
+
+\begin{lstlisting}[caption={Hồi quy đa thức với PolynomialFeatures}]
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+from sklearn.linear_model import LinearRegression
+
+rng = np.random.default_rng(0)              # 40 diem mo phong y = sin(x) + nhieu
+x = rng.uniform(0, 2 * np.pi, (40, 1))
+y_sin = np.sin(x[:, 0]) + rng.normal(0, 0.3, 40)
+x_tr, x_te, y_tr, y_te = train_test_split(x, y_sin, random_state=0)
+
+for p in (1, 3, 15):                        # thieu khop, vua khop, qua khop
+    m = make_pipeline(PolynomialFeatures(degree=p), StandardScaler(),
+                      LinearRegression()).fit(x_tr, y_tr)
+    print(p, round(m.score(x_tr, y_tr), 3), round(m.score(x_te, y_te), 3))
+# 1 0.337 0.169  |  3 0.821 0.766  |  15 0.853 0.696   (R2 train, R2 test)
+
+poly_model = make_pipeline(PolynomialFeatures(degree=3), StandardScaler(),
+                           LinearRegression()).fit(x_tr, y_tr)
+\end{lstlisting}
+
+\subsection{Quá khớp và thiếu khớp}
+
+Bậc $p$ quá thấp, mô hình không nắm bắt được xu hướng (\textbf{thiếu khớp} -- underfitting); bậc quá cao, mô hình ``học thuộc'' cả nhiễu, sai số huấn luyện rất nhỏ nhưng dự đoán dữ liệu mới rất kém (\textbf{quá khớp} -- overfitting). Kết quả của đoạn mã trên cho thấy đúng hai hiện tượng này qua hệ số $R^2$. Với bậc 1, $R^2$ thấp trên cả hai tập. Từ bậc 3 lên bậc 15, $R^2$ trên tập huấn luyện tăng từ 0,821 lên 0,853, nhưng trên tập kiểm tra lại giảm từ 0,766 xuống 0,696. Cách phát hiện và lựa chọn độ phức tạp phù hợp được trình bày chi tiết ở Chương~\ref{chap:validation}.
+
+\hinhchuachen{ch-regression-poly.png}{Hồi quy đa thức bậc 1, 3 và 15 trên cùng một tập dữ liệu: thiếu khớp, vừa khớp và quá khớp (20 điểm mô phỏng từ $y = \sin x$ cộng nhiễu; RMSE kiểm tra tính trên 2000 điểm mới).}{fig:poly}
+
+\subsection{Ridge và Lasso}
+
+\textbf{Chính quy hóa} (regularization) thêm vào hàm mất mát một khoản phạt độ lớn của hệ số:
+\begin{align}
+    \text{Ridge (Hoerl \& Kennard, 1970)}: \quad & \min_{\mathbf{w}} \|\mathbf{y} - \mathbf{X}\mathbf{w}\|^2 + \alpha \|\mathbf{w}\|_2^2, \\
+    \text{Lasso (Tibshirani, 1996)}: \quad & \min_{\mathbf{w}} \tfrac{1}{2n}\|\mathbf{y} - \mathbf{X}\mathbf{w}\|^2 + \alpha \|\mathbf{w}\|_1 .
+\end{align}
+Ridge co các hệ số về gần 0 và có nghiệm đóng $\mathbf{w}^* = (\mathbf{X}^\top\mathbf{X} + \alpha\mathbf{I})^{-1}\mathbf{X}^\top\mathbf{y}$, luôn khả nghịch khi $\alpha > 0$ --- khắc phục đa cộng tuyến. Lasso có thể đưa nhiều hệ số về \textbf{đúng bằng 0}, tức tự động \textbf{chọn đặc trưng}. ElasticNet (Zou \& Hastie, 2005) kết hợp cả hai khoản phạt. Tham số $\alpha$ được chọn bằng kiểm định chéo (\texttt{RidgeCV}, \texttt{LassoCV}). Vì khoản phạt phụ thuộc độ lớn hệ số, \textbf{bắt buộc phải chuẩn hóa dữ liệu} trước khi dùng Ridge/Lasso.
+
+% ---------------------------------------------------------
+\section{Hồi quy bền vững và phân tích phần dư}
+\label{sec:robust-regression}
+% ---------------------------------------------------------
+
+Bình phương tối thiểu cực tiểu tổng \textbf{bình phương} phần dư, nên một điểm có phần dư bằng 10 đóng góp 100 đơn vị vào hàm mất mát --- gấp trăm lần một điểm có phần dư bằng 1. Vì vậy chỉ vài ngoại lai cũng đủ ``kéo lệch'' toàn bộ đường hồi quy. Nói theo ngôn ngữ thống kê, \textbf{điểm sụp đổ} (breakdown point) của OLS bằng 0: chỉ một điểm dữ liệu tồi tệ tùy ý cũng có thể làm ước lượng sai lệch tùy ý (Raschka và cộng sự, 2022, Chương 9).
+
+\begin{example}[Ngoại lai kéo lệch đường hồi quy]
+Mười điểm được sinh từ quan hệ $y \approx 2x + 1$ với $x = 0, 1, \dots, 9$ (có nhiễu nhỏ), cộng thêm ba điểm ngoại lai do lỗi nhập liệu $(7{,}5;\ 2{,}0)$, $(8{,}5;\ 1{,}0)$, $(9{,}5;\ 3{,}0)$. Dữ liệu của 13 điểm cho trong Bảng~\ref{tab:ransac-data}.
+\end{example}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|c|ccccccccccccc|}
+\hline
+$x$ & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 7,5 & 8,5 & 9,5 \\ \hline
+$y$ & 1,06 & 2,93 & 5,32 & 7,05 & 8,73 & 11,18 & 13,65 & 15,47 & 16,65 & 18,37 & \textbf{2,0} & \textbf{1,0} & \textbf{3,0} \\ \hline
+\end{tabular}
+\caption{Dữ liệu ví dụ hồi quy bền vững; ba cột cuối là ngoại lai}
+\label{tab:ransac-data}
+\end{table}
+
+Hồi quy OLS trên cả 13 điểm cho $\hat{y} = 4{,}205 + 0{,}734\,x$: hệ số góc bị kéo từ khoảng 2 xuống còn 0,73, tức ba điểm sai đã làm hỏng mô hình của mười điểm đúng.
+
+\subsection{RANSAC}
+
+RANSAC (RANdom SAmple Consensus) được Fischler và Bolles (1981) đề xuất cho thị giác máy tính, nơi dữ liệu đo đạc chứa rất nhiều điểm sai. Thay vì giảm trọng số ngoại lai, RANSAC \textbf{tìm và loại bỏ} chúng (Raschka và cộng sự, 2022, Chương 9):
+\begin{enumerate}
+    \item Chọn ngẫu nhiên một tập con nhỏ nhất đủ để khớp mô hình (với đường thẳng là 2 điểm), coi là các điểm ``trong'' (inlier) giả định, và khớp mô hình.
+    \item Tính phần dư của mọi điểm còn lại; điểm nào có $|y_i - \hat{y}_i| \leq t$ (ngưỡng do người dùng chọn) được thêm vào tập điểm trong --- gọi là \textbf{tập đồng thuận}.
+    \item Khớp lại mô hình trên toàn bộ tập điểm trong.
+    \item Đánh giá sai số của mô hình trên tập điểm trong.
+    \item Lặp lại một số lần cố định hoặc đến khi đạt ngưỡng hiệu năng; giữ mô hình có tập đồng thuận tốt nhất.
+\end{enumerate}
+
+\paragraph{Cần bao nhiêu lần lặp?} Gọi $\varepsilon$ là tỉ lệ ngoại lai, $s$ là kích thước tập con tối thiểu và $p$ là xác suất mong muốn có ít nhất một lần rút được tập con \textbf{toàn điểm trong}. Mỗi lần rút thành công với xác suất $(1 - \varepsilon)^s$, nên số lần lặp cần thiết là
+\begin{equation}
+    N = \frac{\ln(1 - p)}{\ln\big(1 - (1 - \varepsilon)^s\big)} .
+\end{equation}
+Với ví dụ trên, $\varepsilon = 3/13$, $s = 2$, $p = 0{,}99$: $(1 - \varepsilon)^2 = (10/13)^2 \approx 0{,}592$, nên $N = \ln 0{,}01 / \ln 0{,}408 \approx 5{,}14$, tức chỉ cần 6 lần lặp. Mặc định của scikit-learn là 100 lần lặp (\texttt{max\_trials}).
+
+Với ngưỡng $t = 1{,}5$, RANSAC xác định đúng ba điểm cuối là ngoại lai và cho $\hat{y} = 1{,}185 + 1{,}968\,x$ --- \textbf{trùng hoàn toàn} với OLS khi chỉ chạy trên mười điểm sạch.
+
+\subsection{Hàm mất mát Huber}
+
+Huber (1964) đề xuất một hàm mất mát lai: bậc hai với phần dư nhỏ, \textbf{tuyến tính} với phần dư lớn:
+\begin{equation}
+    L_\delta(r) = \begin{cases} \tfrac{1}{2}r^2 & |r| \leq \delta, \\[3pt] \delta\big(|r| - \tfrac{1}{2}\delta\big) & |r| > \delta. \end{cases}
+\end{equation}
+Vì phần tuyến tính tăng chậm hơn hẳn phần bậc hai, ảnh hưởng của mỗi ngoại lai bị \textbf{chặn}. Khác với RANSAC, Huber không loại điểm nào mà chỉ giảm ảnh hưởng của chúng. \texttt{HuberRegressor} (tham số \texttt{epsilon=1.35} mặc định) cho $\hat{y} = 1{,}392 + 1{,}863\,x$.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Phương pháp} & \textbf{Hệ số góc} & \textbf{Hệ số chặn} \\
+\hline
+Quan hệ sinh dữ liệu & 2 & 1 \\ \hline
+OLS trên 13 điểm (có ngoại lai) & 0,734 & 4,205 \\ \hline
+OLS trên 10 điểm sạch (tham chiếu) & 1,968 & 1,185 \\ \hline
+RANSAC ($t = 1{,}5$) & 1,968 & 1,185 \\ \hline
+Huber ($\varepsilon = 1{,}35$) & 1,863 & 1,392 \\ \hline
+\end{tabular}
+\caption{So sánh OLS và hai phương pháp hồi quy bền vững}
+\label{tab:robust}
+\end{table}
+
+\hinhchuachen{ch-regression-ransac.png}{Đường OLS bị ba ngoại lai kéo lệch, so với đường RANSAC (điểm trong và ngoại lai được tô màu khác nhau) và đường Huber.}{fig:ransac}
+
+\begin{lstlisting}[caption={OLS, RANSAC và Huber trên dữ liệu có ngoại lai}]
+import numpy as np
+from sklearn.linear_model import LinearRegression, RANSACRegressor, HuberRegressor
+
+rng = np.random.default_rng(0)
+x = np.arange(10, dtype=float)
+y = 2 * x + 1 + rng.normal(0, 0.5, 10)
+x = np.r_[x, 7.5, 8.5, 9.5]                 # them 3 ngoai lai
+y = np.r_[y, 2.0, 1.0, 3.0]
+X = x.reshape(-1, 1)
+
+ols = LinearRegression().fit(X, y)
+ransac = RANSACRegressor(LinearRegression(), residual_threshold=1.5,
+                         random_state=0).fit(X, y)
+huber = HuberRegressor().fit(X, y)
+print(ols.coef_, ols.intercept_)                                  # [0.734] 4.205
+print(ransac.estimator_.coef_, ransac.estimator_.intercept_)      # [1.968] 1.185
+print(np.where(~ransac.inlier_mask_)[0])                          # [10 11 12]
+print(huber.coef_, huber.intercept_)                              # [1.863] 1.392
+\end{lstlisting}
+
+\noindent\textit{Lưu ý thực hành.} Ngưỡng $t$ phụ thuộc thang đo của $y$; nếu không chỉ định, scikit-learn dùng độ lệch tuyệt đối trung vị (MAD) của $y$. RANSAC có tính ngẫu nhiên nên cần cố định \texttt{random\_state}. Cả hai phương pháp đều không thay thế được việc \textbf{tìm hiểu nguyên nhân} của ngoại lai (Chương~\ref{chap:preprocessing}): ngoại lai do lỗi nhập liệu thì nên sửa hoặc loại, còn ngoại lai là hiện tượng thật thì có thể chính là điều cần nghiên cứu.
+
+\subsection{Phân tích phần dư}
+
+Với nhiều đặc trưng, không thể vẽ đường hồi quy trong không gian nhiều chiều, nhưng luôn vẽ được \textbf{biểu đồ phần dư}: trục hoành là giá trị dự đoán $\hat{y}_i$, trục tung là phần dư $e_i = y_i - \hat{y}_i$ (Raschka và cộng sự, 2022, Chương 9). Với một mô hình tốt, các điểm phân tán \textbf{ngẫu nhiên} quanh đường $e = 0$ với độ rộng không đổi. Mọi \textbf{khuôn mẫu} trong biểu đồ đều là thông tin mà mô hình chưa nắm bắt được:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{3.6cm}|p{4.2cm}|p{5cm}|}
+\hline
+\textbf{Khuôn mẫu} & \textbf{Chẩn đoán} & \textbf{Cách xử lý} \\
+\hline
+Hình cong (chữ U) & Quan hệ phi tuyến chưa được mô hình hóa & Thêm đặc trưng đa thức, biến đổi đặc trưng, dùng mô hình phi tuyến \\ \hline
+Hình phễu (độ rộng tăng theo $\hat{y}$) & Phương sai sai số thay đổi (heteroscedasticity) & Biến đổi logarit biến mục tiêu, như với giá nhà Ames \\ \hline
+Vài điểm nằm xa đường 0 & Ngoại lai, điểm có ảnh hưởng lớn & Kiểm tra dữ liệu, dùng hồi quy bền vững \\ \hline
+Khuôn mẫu theo thứ tự thời gian & Tự tương quan của sai số & Thêm đặc trưng trễ, dùng mô hình chuỗi thời gian \\ \hline
+\end{tabular}
+\caption{Đọc biểu đồ phần dư}
+\label{tab:residual-patterns}
+\end{table}
+
+\hinhchuachen{ch-regression-residual-patterns.png}{Bốn dạng biểu đồ phần dư điển hình: ngẫu nhiên (tốt), hình cong, hình phễu và có ngoại lai.}{fig:residual-patterns}
+
+\begin{lstlisting}[caption={Vẽ biểu đồ phần dư bằng scikit-learn}]
+from sklearn.metrics import PredictionErrorDisplay
+
+y_pred = poly_model.predict(x_te)       # mo hinh bac 3 o muc Hoi quy da thuc
+PredictionErrorDisplay.from_predictions(y_te, y_pred, kind="residual_vs_predicted")
+PredictionErrorDisplay.from_predictions(y_te, y_pred, kind="actual_vs_predicted")
+\end{lstlisting}
+
+% ---------------------------------------------------------
+\section{Hồi quy cho chuỗi thời gian}
+% ---------------------------------------------------------
+
+\begin{definition}[Chuỗi thời gian]
+Chuỗi thời gian là dãy quan sát $y_1, y_2, \dots, y_T$ được ghi nhận theo thứ tự thời gian, thường cách đều (ngày, tháng, quý). Bài toán dự báo là ước lượng $y_{T+1}, y_{T+2}, \dots$ từ các giá trị quá khứ.
+\end{definition}
+
+Các mô hình thống kê kinh điển như ARIMA được Box và Jenkins hệ thống hóa năm 1970. Tuy nhiên, có thể giải bài toán dự báo bằng chính hồi quy tuyến tính thông qua \textbf{đặc trưng trễ} (lag features): dùng $y_{t-1}, y_{t-2}, \dots, y_{t-p}$ làm đầu vào để dự đoán $y_t$ --- tương đương mô hình tự hồi quy AR($p$). Có thể bổ sung đặc trưng lịch (tháng, thứ trong tuần), trung bình trượt và xu hướng theo thời gian.
+
+\paragraph{Ba nguyên tắc riêng của chuỗi thời gian.}
+\begin{enumerate}
+    \item \textbf{Không xáo trộn dữ liệu} khi chia train/test: tập kiểm tra phải nằm \textit{sau} tập huấn luyện về thời gian.
+    \item Đặc trưng chỉ được tính từ \textbf{quá khứ}; dùng giá trị tương lai là rò rỉ dữ liệu.
+    \item Kiểm định chéo dùng \texttt{TimeSeriesSplit}: các fold huấn luyện luôn đứng trước fold kiểm tra.
+\end{enumerate}
+
+\begin{lstlisting}[caption={Dự báo chuỗi thời gian bằng đặc trưng trễ}]
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error
+
+# Du lieu mo phong: doanh so thang co xu huong + mua vu + nhieu
+rng = np.random.default_rng(0)
+t = np.arange(60)
+sales = 100 + 2 * t + 15 * np.sin(2 * np.pi * t / 12) + rng.normal(0, 5, 60)
+df = pd.DataFrame({"sales": sales})
+
+# Tao dac trung tre va dac trung lich
+for lag in [1, 2, 12]:
+    df[f"lag_{lag}"] = df["sales"].shift(lag)
+df["month"] = t % 12
+df["trend"] = t
+df = df.dropna()
+
+# Chia theo thoi gian: 12 thang cuoi lam tap kiem tra
+train, test = df.iloc[:-12], df.iloc[-12:]
+features = ["lag_1", "lag_2", "lag_12", "trend"]
+model = LinearRegression().fit(train[features], train["sales"])
+pred = model.predict(test[features])
+print("MAE:", mean_absolute_error(test["sales"], pred))
+\end{lstlisting}
+
+\hinhchuachen{ch-regression-timeseries.png}{Chuỗi doanh số theo tháng, phần huấn luyện, phần kiểm tra và đường dự báo bằng đặc trưng trễ (kết quả chạy đoạn code trên; dữ liệu mô phỏng).}{fig:timeseries}
+
+% ---------------------------------------------------------
+\section{Nghiên cứu tình huống: dự đoán giá nhà Ames}
+% ---------------------------------------------------------
+
+Tiếp nối Chương~\ref{chap:preprocessing}, ta dùng bộ tiền xử lý \texttt{preprocess} (ColumnTransformer) đã xây dựng và gắn thêm mô hình hồi quy. Biến mục tiêu được lấy logarit, $y = \ln(\text{SalePrice})$, vì giá nhà lệch phải: sai số trên thang log tương ứng với sai số \textit{tương đối} (phần trăm), công bằng giữa nhà rẻ và nhà đắt.
+
+\begin{lstlisting}[caption={So sánh Linear Regression, Ridge và Lasso trên Ames Housing}]
+import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LinearRegression, RidgeCV, LassoCV
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import mean_squared_error
+
+# Can chay truoc ma nguon o muc Nghien cuu tinh huong Ames (Chuong 5):
+# muc do tao X_train, X_test, y_train, y_test va bo tien xu ly preprocess
+models = {
+    "Linear": LinearRegression(),
+    "Ridge":  RidgeCV(alphas=np.logspace(-3, 3, 20)),
+    "Lasso":  LassoCV(alphas=np.logspace(-4, 0, 20), max_iter=10000),
+}
+for name, reg in models.items():
+    pipe = Pipeline([("prep", preprocess), ("reg", reg)])
+    cv = cross_val_score(pipe, X_train, y_train, cv=5,
+                         scoring="neg_root_mean_squared_error")
+    pipe.fit(X_train, y_train)
+    rmse = mean_squared_error(y_test, pipe.predict(X_test)) ** 0.5
+    print(f"{name:7s} CV-RMSE={-cv.mean():.4f}  Test-RMSE={rmse:.4f}")
+
+# RMSE tren thang log ~ sai so tuong doi, vd 0.12 ~ khoang 12%
+# Doi du doan ve don vi USD:
+price_pred = np.exp(pipe.predict(X_test[:5]))
+\end{lstlisting}
+
+\hinhchuachen{ch-regression-ames-residual.png}{Biểu đồ giá trị thực -- giá trị dự đoán (thang log) của mô hình Ridge trên tập kiểm tra Ames Housing.}{fig:ames-pred}
+
+% ---------------------------------------------------------
+\section{Tóm tắt chương}
+% ---------------------------------------------------------
+\begin{itemize}
+    \item Phương pháp bình phương tối thiểu (Legendre 1805, Gauss 1809) là nền tảng của hồi quy; thuật ngữ ``hồi quy'' bắt nguồn từ nghiên cứu của Galton (1886).
+    \item Hồi quy tuyến tính có nghiệm đóng $w_1 = S_{xy}/S_{xx}$, $w_0 = \bar{y} - w_1\bar{x}$; dạng đa biến $\mathbf{w}^* = (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y}$.
+    \item Gradient Descent cập nhật tham số ngược hướng gradient; tốc độ học và chuẩn hóa dữ liệu quyết định tốc độ hội tụ.
+    \item Mini-batch Gradient Descent cập nhật sau mỗi lô $B$ mẫu: $\hat{\mathbf{y}} = \mathbf{X}_B\mathbf{w}$, $\nabla L = \frac{2}{B}\mathbf{X}_B^\top(\hat{\mathbf{y}} - \mathbf{y}_B)$. Mỗi bước chỉ ổn định khi $\alpha < 2/\lambda_{\max}$, nên đặc trưng có thang đo lớn dễ gây phân kỳ; khắc phục bằng cách giảm $\alpha$ hoặc chuẩn hóa đặc trưng.
+    \item Hồi quy đa thức tăng độ linh hoạt nhưng dễ quá khớp; Ridge và Lasso kiểm soát độ phức tạp, Lasso còn chọn đặc trưng.
+    \item OLS có điểm sụp đổ bằng 0. RANSAC tìm và loại ngoại lai bằng tập đồng thuận, cần $N = \ln(1 - p)/\ln(1 - (1 - \varepsilon)^s)$ lần lặp; mất mát Huber chặn ảnh hưởng của phần dư lớn. Biểu đồ phần dư chẩn đoán quan hệ phi tuyến, phương sai thay đổi, ngoại lai và tự tương quan.
+    \item Với chuỗi thời gian: dùng đặc trưng trễ, chia dữ liệu theo thời gian, không xáo trộn.
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{Bài tập}
+% ---------------------------------------------------------
+\begin{enumerate}
+    \item Cho $x = (1, 2, 3, 4)$, $y = (3, 5, 7, 10)$. Tính tay $w_0$, $w_1$, SSE và $R^2$; kiểm tra bằng \texttt{LinearRegression}.
+    \item Chứng minh công thức (\ref{eq:ols-simple}) bằng cách lấy đạo hàm SSE theo $w_0$ và $w_1$.
+    \item Chạy Gradient Descent cho bài 1 với $\eta \in \{0{,}01;\ 0{,}05;\ 0{,}2\}$. Vẽ giá trị hàm mất mát theo số bước và nhận xét.
+    \item Với ví dụ mini-batch ở Bảng~\ref{tab:minibatch-data}, tính tay epoch đầu tiên khi $\alpha = 0{,}01$. MSE trên toàn bộ dữ liệu sau epoch là bao nhiêu? (Đáp số: 4,39.) Lặp lại với \texttt{batch\_size} $= 1$ (SGD) và \texttt{batch\_size} $= 5$ (batch); so sánh số bước cập nhật trong một epoch.
+    \item Sinh dữ liệu $y = \sin(x) + \text{nhiễu}$ với 20 điểm. Khớp đa thức bậc 1, 3, 9, 15 và so sánh sai số trên tập huấn luyện và tập kiểm tra.
+    \item Trên Ames Housing, dùng \texttt{LassoCV} và liệt kê 10 đặc trưng có hệ số lớn nhất (theo trị tuyệt đối). Bao nhiêu hệ số bị đưa về 0?
+    \item Với ví dụ RANSAC (Bảng~\ref{tab:ransac-data}), chạy lại với ngưỡng $t \in \{0{,}5;\ 1{,}5;\ 5;\ 15\}$. Ngưỡng nào quá chặt (loại cả điểm đúng), ngưỡng nào quá lỏng (giữ cả ngoại lai)? Tính số lần lặp $N$ cần thiết khi tỉ lệ ngoại lai là 50\% và $p = 0{,}999$.
+    \item Theo Raschka và cộng sự (2022, Chương 9), khớp \texttt{SalePrice} theo \texttt{Gr Liv Area} của Ames Housing bằng OLS và RANSAC; vẽ các điểm trong, ngoại lai và hai đường hồi quy. Sau đó vẽ biểu đồ phần dư của mô hình đa biến ở mục nghiên cứu tình huống và chẩn đoán theo Bảng~\ref{tab:residual-patterns}.
+    \item Vì sao không được dùng \texttt{train\_test\_split(shuffle=True)} cho chuỗi thời gian? Viết lại ví dụ dự báo doanh số với \texttt{TimeSeriesSplit}.
+\end{enumerate}
+
+% ---------------------------------------------------------
+\section*{Tài liệu tham khảo của chương}
+\addcontentsline{toc}{section}{Tài liệu tham khảo của chương}
+% ---------------------------------------------------------
+\begin{enumerate}
+    \item Box, G. E. P., \& Jenkins, G. M. (1970). \textit{Time Series Analysis: Forecasting and Control}. Holden-Day.
+    \item Cauchy, A.-L. (1847). Méthode générale pour la résolution des systèmes d'équations simultanées. \textit{Comptes Rendus de l'Académie des Sciences}, 25, 536--538.
+    \item Fischler, M. A., \& Bolles, R. C. (1981). Random Sample Consensus: A Paradigm for Model Fitting with Applications to Image Analysis and Automated Cartography. \textit{Communications of the ACM}, 24(6), 381--395.
+    \item Galton, F. (1886). Regression towards mediocrity in hereditary stature. \textit{Journal of the Anthropological Institute}, 15, 246--263.
+    \item Gauss, C. F. (1809). \textit{Theoria Motus Corporum Coelestium}. Hamburg: Perthes \& Besser.
+    \item Hastie, T., Tibshirani, R., \& Friedman, J. (2009). \textit{The Elements of Statistical Learning} (2nd ed.), Chương 3. Springer.
+    \item Hoerl, A. E., \& Kennard, R. W. (1970). Ridge Regression: Biased Estimation for Nonorthogonal Problems. \textit{Technometrics}, 12(1), 55--67.
+    \item Huber, P. J. (1964). Robust Estimation of a Location Parameter. \textit{The Annals of Mathematical Statistics}, 35(1), 73--101.
+    \item Legendre, A.-M. (1805). \textit{Nouvelles méthodes pour la détermination des orbites des comètes}. Paris: Firmin Didot.
+    \item Liu, Y. (H.) (2019). \textit{Python Machine Learning By Example} (2nd ed.), Chương 9: Stock Price Prediction with Regression Algorithms. Packt Publishing.
+    \item Raschka, S., Liu, Y. (H.), \& Mirjalili, V. (2022). \textit{Machine Learning with PyTorch and Scikit-Learn}, Chương 9: Predicting Continuous Target Variables with Regression Analysis. Packt Publishing.
+    \item Tibshirani, R. (1996). Regression Shrinkage and Selection via the Lasso. \textit{Journal of the Royal Statistical Society, Series B}, 58(1), 267--288.
+    \item Zou, H., \& Hastie, T. (2005). Regularization and variable selection via the elastic net. \textit{Journal of the Royal Statistical Society, Series B}, 67(2), 301--320.
+\end{enumerate}

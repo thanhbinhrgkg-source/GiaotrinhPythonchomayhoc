@@ -1,4 +1,5 @@
 \chapter{Lập trình hướng đối tượng trong Python}
+\label{chap:oop}
 
 Lập trình hướng đối tượng (Object-Oriented Programming - OOP) là phương pháp luận lập trình đóng vai trò then chốt trong việc thiết kế các thư viện Machine Learning hiện đại như Scikit-Learn, PyTorch và TensorFlow. Chương này trình bày các khái niệm OOP cốt lõi và hướng dẫn cách ứng dụng OOP để tự đóng gói một mô hình Machine Learning.
 
@@ -93,7 +94,7 @@ class MinMaxScaler(BaseTransformer):
         return self
 
     def transform(self, arr):
-        # Kiem tra an toan: Đam bao mo hinh da duoc fit()
+        # Kiem tra an toan: Dam bao mo hinh da duoc fit()
         if not hasattr(self, 'min') or not hasattr(self, 'max'):
             raise RuntimeError("Loi: Ban phai goi ham fit() truoc khi goi transform()!")
             
@@ -165,5 +166,13 @@ class Pipeline:
     \item Ứng dụng các Magic Methods (\texttt{\_\_init\_\_}, \texttt{\_\_call\_\_}) trong xây dựng Framework.
     \item Nguyên lý Kế thừa giúp tái sử dụng và quản lý mã nguồn linh hoạt.
     \item Đóng gói thuật toán Machine Learning thành Class theo giao diện tiêu chuẩn.
-    \item Phân biệt rõ ràng siêu tham số và tham số học được thông qua các thuộc tính của đối tượng
+    \item Phân biệt rõ ràng siêu tham số và tham số học được thông qua các thuộc tính của đối tượng.
 \end{itemize}
+
+\section{Bài tập}
+\begin{enumerate}
+    \item Viết lớp \texttt{MeanPredictor} theo giao diện của scikit-learn: \texttt{fit(X, y)} lưu trung bình của \texttt{y} vào thuộc tính \texttt{mean\_}, còn \texttt{predict(X)} trả về một list gồm \texttt{len(X)} giá trị \texttt{mean\_}. Đây là \textbf{mô hình cơ sở} (baseline) mà mọi mô hình hồi quy ở các chương sau phải vượt qua.
+    \item Viết lớp \texttt{MedianPredictor} kế thừa \texttt{MeanPredictor} và chỉ ghi đè phương thức \texttt{fit} để dùng trung vị. Giải thích vì sao không cần viết lại \texttt{predict}.
+    \item Theo quy ước của scikit-learn, tên của tham số học được kết thúc bằng dấu gạch dưới (\texttt{coef\_}, \texttt{mean\_}). Sửa lớp \texttt{MinMaxScaler} ở Mục ``Quản lý thuộc tính'' theo quy ước này, đồng thời xử lý trường hợp mọi giá trị bằng nhau (\texttt{max} bằng \texttt{min}) để tránh phép chia cho 0.
+    \item Trong mẫu thiết kế Pipeline, các bước biến đổi chỉ được \texttt{fit} trên dữ liệu huấn luyện rồi mới áp dụng cho dữ liệu kiểm tra. Giải thích lý do (gợi ý: hiện tượng rò rỉ dữ liệu ở Chương~\ref{chap:preprocessing}).
+\end{enumerate}

@@ -29,12 +29,34 @@
 \usepackage{float}
 \graphicspath{{images/}}
 
+% Chen hinh: tu hien anh neu images/<ten-file> ton tai, neu chua co thi ve khung giu cho
+% Cach dung: \hinhchuachen{ten-file.png}{Chu thich}{nhan}
+\newcommand{\hinhchuachen}[3]{%
+\begin{figure}[H]
+    \centering
+    \IfFileExists{images/#1}{%
+        \includegraphics[width=0.85\textwidth]{images/#1}%
+    }{%
+        \fbox{\parbox[c][5cm][c]{0.82\textwidth}{\centering
+            \textit{[Chỗ chèn hình]}\\[4pt]
+            \texttt{images/\detokenize{#1}}}}%
+    }
+    \caption{#2}
+    \label{#3}
+\end{figure}}
+
 % =========================================
 % BẢNG
 % =========================================
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{longtable}
+
+% =========================================
+% DANH SÁCH: dùng gạch ngang thay cho dấu chấm đầu dòng
+% =========================================
+\usepackage{enumitem}
+\setlist[itemize]{label=\textendash}
 
 % =========================================
 % CODE PYTHON
@@ -48,14 +70,19 @@
     numberstyle=\tiny,
     frame=single,
     breaklines=true,
+    columns=fullflexible,
+    keepspaces=true,
     showstringspaces=false
 }
 
 % =========================================
 % LINK
 % =========================================
+\usepackage{xcolor}
 \usepackage{hyperref}
 \usepackage{url}
+% Lien ket hien thi bang chu mau xanh dam thay cho khung do mac dinh
+\hypersetup{colorlinks=true, linkcolor=blue!50!black, urlcolor=blue!50!black, citecolor=blue!50!black}
 
 % =========================================
 % LỀ TRANG
@@ -74,6 +101,9 @@
 \newtheorem{theorem}{Định lý}[chapter]
 \newtheorem{example}{Ví dụ}[chapter]
 
+% Cho phep gian dong linh hoat hon de tranh tran le khi co \texttt dai
+\setlength{\emergencystretch}{3em}
+
 % =========================================
 % DOCUMENT
 % =========================================
@@ -85,7 +115,11 @@
 \frontmatter
 
 \title{
-    \Huge\textbf{LẬP TRÌNH PYTHON CHO MACHINE LEARNING}
+    \includegraphics[width=4.5cm]{images/logoHCMUNRE.png}
+
+    \vspace{1cm}
+
+    \Huge\textbf{LẬP TRÌNH PYTHON CHO MÁY HỌC}
     
     \vspace{1cm}
     
@@ -98,24 +132,39 @@
 
 \maketitle
 
+\include{chapters/00-preface}
+
 \tableofcontents
 
 % ----- Nội dung chính -----
+% Trình tự chương được sắp theo quan hệ phụ thuộc kiến thức (xem Lời nói đầu).
+% Tên tệp giữ nguyên như khung ban đầu của nhóm để tiện ghép bản thảo;
+% số chương thực tế do thứ tự \include quyết định, ghi ở chú thích bên phải.
 
 \mainmatter
 
-\include{chapters/01-introduction}
-\include{chapters/02-python-essentials}
-\include{chapters/03-oop-python}
-\include{chapters/04-numpy-pandas}
-\include{chapters/05-preprocessing}
-\include{chapters/06-regression}
-\include{chapters/07-classify}
-\include{chapters/08-ensemble}
-\include{chapters/09-clustering}
-\include{chapters/09-reduce-dimension}
-\include{chapters/10-validation}
-\include{chapters/11-neural-network}
+\part{Nền tảng lập trình Python}
+\include{chapters/01-introduction}        % Chương 1
+\include{chapters/02-python-essentials}   % Chương 2
+\include{chapters/03-oop-python}          % Chương 3
+\include{chapters/04-numpy-pandas}        % Chương 4
+
+\part{Dữ liệu và học có giám sát}
+\include{chapters/05-preprocessing}       % Chương 5
+\include{chapters/06-regression}          % Chương 6
+\include{chapters/07-classify}            % Chương 7
+\include{chapters/10-validation}          % Chương 8
+\include{chapters/08-ensemble}            % Chương 9
+
+\part{Học không giám sát}
+\include{chapters/09-reduce-dimension}    % Chương 10
+\include{chapters/09-clustering}          % Chương 11
+
+\part{Thực hành tổng hợp}
+% Chuong Mang no-ron da duoc bo khoi giao trinh theo de cuong mon hoc
+% (tep van giu nguyen; bo dau % o dong duoi neu can dua tro lai).
+% \include{chapters/11-neural-network}
+\include{chapters/12-labs}                % Chương 12
 
 % ----- Tài liệu tham khảo -----
 

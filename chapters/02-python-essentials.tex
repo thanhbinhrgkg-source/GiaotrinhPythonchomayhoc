@@ -1,10 +1,21 @@
 \chapter{Cú pháp Python cơ bản}
+\label{chap:python-basics}
 
-Chương này trình bày các khái niệm nền tảng trong lập trình Python, bao gồm biến, kiểu dữ liệu, toán tử, cấu trúc điều khiển và các hàm toán học. Đây là các kiến thức bắt buộc trước khi đi vào xử lý dữ liệu và Machine Learning.
+Chương này trình bày các khái niệm nền tảng trong lập trình Python: biến, kiểu dữ liệu, toán tử, cấu trúc dữ liệu, cấu trúc điều khiển, vòng lặp và hàm. Đây là các kiến thức bắt buộc trước khi đi vào xử lý dữ liệu và Machine Learning, vì mọi đoạn mã ở các chương sau đều được ghép từ những thành phần này. Các ví dụ được chọn có chủ đích: mỗi ví dụ là hình thức sơ khai của một thao tác sẽ gặp lại trong học máy, như tính độ chính xác, lưu siêu tham số hay lặp Gradient Descent.
+
+\noindent Sau khi học xong chương này, người học có khả năng:
+\begin{itemize}
+    \item Khai báo biến, nhận biết và chuyển đổi các kiểu dữ liệu cơ bản; định dạng chuỗi bằng f-string.
+    \item Sử dụng các toán tử số học, toán tử gán, toán tử so sánh và toán tử logic.
+    \item Lựa chọn đúng cấu trúc dữ liệu: list, tuple, dictionary và set.
+    \item Viết cấu trúc rẽ nhánh \texttt{if-elif-else}, vòng lặp \texttt{for}, \texttt{while} và list comprehension.
+    \item Định nghĩa hàm có tham số mặc định, trả về nhiều giá trị; sử dụng hàm \texttt{lambda}.
+    \item Nạp thư viện bằng \texttt{import} và nhận biết các tên viết tắt quy ước \texttt{np}, \texttt{pd}, \texttt{plt}.
+\end{itemize}
 
 \section{Biến và Kiểu dữ liệu}
 
-Trong Python, biến được khởi tạo tự động khi gán giá trị. Python là ngôn ngữ \textit{dynamically typed} (định kiểu động).
+Trong Python, biến được khởi tạo tự động khi gán giá trị. Python là ngôn ngữ \textit{dynamically typed} (định kiểu động): kiểu của biến được xác định từ giá trị gán cho nó, không cần khai báo trước.
 
 \begin{definition}[Biến trong Python]
 Biến là tên gọi đại diện cho một vùng nhớ chứa dữ liệu. Giá trị của biến có thể thay đổi trong quá trình thực thi chương trình.
@@ -13,7 +24,7 @@ Biến là tên gọi đại diện cho một vùng nhớ chứa dữ liệu. Gi
 \subsection{Các kiểu dữ liệu cơ bản}
 Dựa trên nền tảng Python Basic, dưới đây là bảng tổng hợp các kiểu dữ liệu cốt lõi thường xuyên được sử dụng:
 
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \begin{tabular}{|l|l|l|}
 \hline
@@ -39,13 +50,31 @@ Dựa trên nền tảng Python Basic, dưới đây là bảng tổng hợp cá
 \hline
 \end{tabular}
 \caption{Các kiểu dữ liệu cơ bản trong Python}
+\label{tab:python-types}
 \end{table}
 
-Để kiểm tra kiểu dữ liệu của một biến trong Python, ta sử dụng hàm \texttt{type()}:
+Để kiểm tra kiểu dữ liệu của một biến trong Python, ta sử dụng hàm \texttt{type()}. Mọi nội dung đứng sau dấu \texttt{\#} trên một dòng là \textbf{chú thích}, Python bỏ qua khi chạy:
 
 \begin{lstlisting}[caption={Kiểm tra kiểu dữ liệu}]
 a = 7
 print(type(a))  # Output: <class 'int'>
+\end{lstlisting}
+
+\subsection{Chuyển đổi kiểu và định dạng chuỗi}
+
+Các hàm \texttt{int()}, \texttt{float()}, \texttt{str()}, \texttt{bool()} chuyển một giá trị sang kiểu tương ứng. Thao tác này rất thường gặp: dữ liệu đọc từ tệp văn bản luôn ở dạng chuỗi, phải chuyển sang số trước khi tính toán. Để in kết quả, cách gọn nhất là \textbf{f-string}: chuỗi có tiền tố \texttt{f}, trong đó mỗi biểu thức đặt trong cặp ngoặc nhọn được thay bằng giá trị của nó. Phần sau dấu hai chấm quy định cách hiển thị: \texttt{:.3f} là số thực với 3 chữ số thập phân, \texttt{:.2\%} là phần trăm với 2 chữ số thập phân.
+
+\begin{lstlisting}[caption={Chuyển đổi kiểu và f-string}]
+s = "3.75"              # du lieu doc tu tep o dang chuoi
+x = float(s)            # chuyen sang so thuc
+n = int(x)              # cat bo phan thap phan
+print(x + 1, n)         # 4.75 3
+
+name = "KNN"
+acc = 0.91234
+print(f"Mo hinh {name}: do chinh xac = {acc:.2%}")
+# Mo hinh KNN: do chinh xac = 91.23%
+print(f"MSE = {0.123456:.3f}")      # MSE = 0.123
 \end{lstlisting}
 
 \section{Toán tử trong Python}
@@ -53,7 +82,7 @@ print(type(a))  # Output: <class 'int'>
 Toán tử là thành phần không thể thiếu để thực hiện các phép tính từ cơ bản đến phức tạp trong các thuật toán.
 
 \subsection{Toán tử cơ bản}
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \begin{tabular}{|l|c|l|l|}
 \hline
@@ -78,8 +107,8 @@ Lấy mũ & \texttt{**} & \texttt{2 ** 3} & \texttt{8} \\
 \end{table}
 
 \subsection{Toán tử gán mở rộng}
-Để mã nguồn ngắn gọn hơn, Python hỗ trợ các toán tử gán mở rộng kết hợp phép tính và phép gán:
-\begin{table}[h]
+Để mã nguồn ngắn gọn hơn, Python hỗ trợ các toán tử gán mở rộng kết hợp phép tính và phép gán: \texttt{a += 3} tương đương \texttt{a = a + 3}.
+\begin{table}[H]
 \centering
 \begin{tabular}{|l|c|l|l|}
 \hline
@@ -91,7 +120,7 @@ Trừ & \texttt{-=} & \texttt{b = 9; b -= 4} & \texttt{5} \\
 \hline
 Nhân & \texttt{*=} & \texttt{a = 2; a *= 7} & \texttt{14} \\
 \hline
-Chia & \texttt{/=} & \texttt{a = 7; b /= 5} & \texttt{1.4} \\
+Chia & \texttt{/=} & \texttt{a = 7; a /= 5} & \texttt{1.4} \\
 \hline
 Chia lấy phần nguyên & \texttt{//=} & \texttt{a = 10; a //= 4} & \texttt{2} \\
 \hline
@@ -103,9 +132,47 @@ Lấy mũ & \texttt{**=} & \texttt{a = 2; a **= 3} & \texttt{8} \\
 \caption{Các toán tử gán mở rộng}
 \end{table}
 
+\subsection{Toán tử so sánh và toán tử logic}
+
+Toán tử so sánh trả về giá trị kiểu \texttt{bool}. Cần phân biệt dấu \texttt{=} (phép gán) với \texttt{==} (phép so sánh bằng). Toán tử logic \texttt{and}, \texttt{or}, \texttt{not} kết hợp nhiều điều kiện. Đây là nền tảng của cấu trúc rẽ nhánh ở Mục~\ref{sec:control-flow} và của phép lọc dữ liệu theo điều kiện ở Chương~\ref{chap:numpy-pandas}.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|l|l|}
+\hline
+\textbf{Ý nghĩa} & \textbf{Ký hiệu} & \textbf{Ví dụ} & \textbf{Kết quả} \\
+\hline
+Bằng & \texttt{==} & \texttt{3 == 3.0} & \texttt{True} \\
+\hline
+Khác & \texttt{!=} & \texttt{2 != 3} & \texttt{True} \\
+\hline
+Lớn hơn, nhỏ hơn & \texttt{>}, \texttt{<} & \texttt{5 > 7} & \texttt{False} \\
+\hline
+Lớn hơn hoặc bằng, nhỏ hơn hoặc bằng & \texttt{>=}, \texttt{<=} & \texttt{4 <= 4} & \texttt{True} \\
+\hline
+Và (đúng khi cả hai đúng) & \texttt{and} & \texttt{True and False} & \texttt{False} \\
+\hline
+Hoặc (đúng khi ít nhất một vế đúng) & \texttt{or} & \texttt{True or False} & \texttt{True} \\
+\hline
+Phủ định & \texttt{not} & \texttt{not True} & \texttt{False} \\
+\hline
+Thuộc về & \texttt{in} & \texttt{2 in [1, 2, 3]} & \texttt{True} \\
+\hline
+\end{tabular}
+\caption{Các toán tử so sánh và toán tử logic}
+\end{table}
+
+\begin{lstlisting}[caption={Kết hợp điều kiện bằng toán tử logic}]
+acc, f1 = 0.92, 0.78
+print(acc > 0.9 and f1 > 0.8)       # False
+print(acc > 0.9 or f1 > 0.8)        # True
+print(not acc > 0.9)                # False
+print("svm" in ["knn", "svm"])      # True
+\end{lstlisting}
+
 \section{Hàm toán học trong Python}
 
-Đối với các ứng dụng khoa học dữ liệu, thư viện \texttt{math} cung cấp các hằng số và hàm tính toán nâng cao. Để sử dụng, ta cần import thư viện:
+Đối với các ứng dụng khoa học dữ liệu, thư viện \texttt{math} cung cấp các hằng số và hàm tính toán nâng cao. Để sử dụng, ta cần import thư viện (cơ chế \texttt{import} được trình bày ở Mục~\ref{sec:python-import}):
 
 \begin{lstlisting}[caption={Import thư viện math}]
 import math
@@ -113,36 +180,38 @@ import math
 
 \subsection{Các hằng số toán học}
 \begin{itemize}
-    \item Hằng số Euler ($E$): \texttt{math.e} $\approx 2.718$
-    \item Hằng số Pi ($\pi$): \texttt{math.pi} $\approx 3.14159$
+    \item Số Euler $e$ (cơ số của logarit tự nhiên): \texttt{math.e} $\approx 2{,}718$.
+    \item Số $\pi$: \texttt{math.pi} $\approx 3{,}14159$.
 \end{itemize}
 
 \subsection{Các hàm toán học thường dùng}
-\begin{table}[h]
+\begin{table}[H]
 \centering
-\begin{tabular}{|c|l|}
+\begin{tabular}{|c|l|l|}
 \hline
-\textbf{Tên hàm (Toán học)} & \textbf{Mã lệnh Python} \\
+\textbf{Hàm (Toán học)} & \textbf{Mã lệnh Python} & \textbf{Ví dụ} \\
 \hline
-$\ln(x)$ & \texttt{math.log(math.e)} \\
+$\ln x$ & \texttt{math.log(x)} & \texttt{math.log(math.e)} cho \texttt{1.0} \\
 \hline
-$\log_2(x)$ & \texttt{math.log2(3)} \\
+$\log_2 x$ & \texttt{math.log2(x)} & \texttt{math.log2(8)} cho \texttt{3.0} \\
 \hline
-$e^x$ & \texttt{math.exp(3)} \\
+$\log_{10} x$ & \texttt{math.log10(x)} & \texttt{math.log10(1000)} cho \texttt{3.0} \\
 \hline
-$\log_{10}(x)$ & \texttt{math.log10(3)} \\
+$e^x$ & \texttt{math.exp(x)} & \texttt{math.exp(0)} cho \texttt{1.0} \\
 \hline
-$\sqrt{x}$ & \texttt{math.sqrt(3)} \\
+$\sqrt{x}$ & \texttt{math.sqrt(x)} & \texttt{math.sqrt(16)} cho \texttt{4.0} \\
 \hline
-$a^x$ & \texttt{math.pow(2, 3)} \\
+$a^x$ & \texttt{math.pow(a, x)} & \texttt{math.pow(2, 3)} cho \texttt{8.0} \\
 \hline
 \end{tabular}
 \caption{Một số hàm toán học từ thư viện math}
 \end{table}
 
+Các hàm của \texttt{math} chỉ nhận \textbf{một số}. Để áp dụng một hàm lên cả mảng hàng nghìn số, ta dùng các hàm cùng tên của NumPy như \texttt{np.log}, \texttt{np.exp} (Chương~\ref{chap:numpy-pandas}).
+
 \section{Cấu trúc dữ liệu nâng cao}
 
-Đối với Machine Learning, ngoài mảng 1 chiều, ta thường sử dụng 3 cấu trúc dữ liệu cơ bản bao gồm List, Tuple và Dictionary.
+Đối với Machine Learning, ngoài các kiểu số và chuỗi, ta thường sử dụng bốn cấu trúc dữ liệu có sẵn của Python: List, Tuple, Dictionary và Set. Bảng~\ref{tab:python-collections} ở cuối mục so sánh bốn cấu trúc này.
 
 \subsection{List (Danh sách)}
 List là tập hợp các phần tử có thứ tự và có thể thay đổi (mutable).
@@ -158,7 +227,73 @@ features.append(4.5)
 print("List sau khi cap nhat:", features)
 \end{lstlisting}
 
+Chỉ số (index) của list bắt đầu từ 0; chỉ số âm đếm từ cuối. Cú pháp \textbf{cắt lát} (slicing) \texttt{a[i:j]} lấy các phần tử từ vị trí \texttt{i} đến \textbf{trước} vị trí \texttt{j}. Quy tắc này được giữ nguyên cho mảng NumPy và bảng Pandas ở Chương~\ref{chap:numpy-pandas}.
+
+\begin{lstlisting}[caption={Chỉ số, cắt lát và các hàm dựng sẵn trên List}]
+scores = [7, 9, 4, 10, 6]
+print(scores[0], scores[-1])                     # 7 6
+print(scores[1:4])                               # [9, 4, 10]
+print(len(scores), sum(scores), max(scores))     # 5 36 10
+print(sorted(scores))                            # [4, 6, 7, 9, 10]
+\end{lstlisting}
+
+\subsection{Tuple (Bộ)}
+Tuple giống list nhưng \textbf{không thể thay đổi} (immutable) sau khi tạo. Tuple thường dùng để biểu diễn những giá trị đi cùng nhau và không được sửa, ví dụ kích thước của một bảng dữ liệu: thuộc tính \texttt{shape} của mảng NumPy chính là một tuple $(n, d)$. Thao tác \textbf{tách tuple} (unpacking) gán từng phần tử cho từng biến.
+
+\begin{lstlisting}[caption={Tuple và phép tách tuple}]
+shape = (150, 4)        # (so mau, so dac trung) cua bo du lieu Iris
+n, d = shape            # tach tuple
+print(n, d)             # 150 4
+# shape[0] = 200        # loi TypeError: tuple khong the thay doi
+\end{lstlisting}
+
+\subsection{Dictionary (Từ điển)}
+Dictionary lưu các cặp \textbf{khóa -- giá trị} (key -- value) và truy xuất giá trị theo khóa thay vì theo vị trí. Trong học máy, dictionary được dùng để lưu bộ siêu tham số của mô hình, lưu lưới siêu tham số cần thử (Chương~\ref{chap:validation}) hay lưu bảng ánh xạ nhãn chữ sang số (Chương~\ref{chap:preprocessing}).
+
+\begin{lstlisting}[caption={Thao tác trên Dictionary}]
+params = {"n_neighbors": 5, "weights": "uniform"}
+params["n_neighbors"] = 7           # sua gia tri theo khoa
+params["metric"] = "euclidean"      # them cap khoa - gia tri moi
+print(params["n_neighbors"])        # 7
+print(list(params.keys()))          # ['n_neighbors', 'weights', 'metric']
+for key, value in params.items():   # duyet tung cap khoa - gia tri
+    print(key, "=", value)
+\end{lstlisting}
+
+\subsection{Set (Tập hợp)}
+Set là tập hợp các phần tử \textbf{không trùng lặp} và không có thứ tự. Set thường dùng để tìm các giá trị khác nhau, ví dụ các lớp xuất hiện trong vector nhãn, hoặc để tính giao, hợp giữa hai tập.
+
+\begin{lstlisting}[caption={Tìm các giá trị khác nhau bằng Set}]
+labels = ["spam", "ham", "spam", "ham", "spam"]
+classes = set(labels)
+print(len(classes), sorted(classes))    # 2 ['ham', 'spam']
+print({1, 2, 3} & {2, 3, 4})            # {2, 3}   (phep giao)
+\end{lstlisting}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|c|c|p{5.1cm}|}
+\hline
+\textbf{Cấu trúc} & \textbf{Ký hiệu} & \textbf{Có thứ tự} & \textbf{Sửa được} & \textbf{Dùng trong học máy} \\
+\hline
+List & \texttt{[ ]} & Có & Có & Danh sách đặc trưng, lịch sử mất mát theo epoch \\
+\hline
+Tuple & \texttt{( )} & Có & Không & Kích thước mảng $(n, d)$, trả về nhiều giá trị \\
+\hline
+Dictionary & \texttt{\{k: v\}} & Có\footnotemark & Có & Siêu tham số, ánh xạ nhãn \\
+\hline
+Set & \texttt{\{ \}} & Không & Có & Tập các lớp, tập từ vựng \\
+\hline
+\end{tabular}
+\caption{So sánh bốn cấu trúc dữ liệu có sẵn của Python}
+\label{tab:python-collections}
+\end{table}
+\footnotetext{Từ Python 3.7, dictionary giữ đúng thứ tự thêm vào của các khóa. Khóa không được trùng nhau.}
+
 \section{Cấu trúc điều khiển và Vòng lặp}
+\label{sec:control-flow}
+
+Python dùng \textbf{thụt lề} (thường là 4 dấu cách) để xác định khối lệnh thuộc về một câu lệnh điều kiện, vòng lặp hay hàm, thay cho cặp ngoặc nhọn của C hay Java. Thụt lề sai sẽ gây lỗi \texttt{IndentationError} hoặc làm chương trình chạy sai logic.
 
 \subsection{Câu lệnh điều kiện if-else}
 \begin{lstlisting}[caption={Sử dụng cấu trúc điều kiện}]
@@ -170,12 +305,208 @@ else:
     print("Can can thiep hoac toi uu them")
 \end{lstlisting}
 
+Khi có nhiều hơn hai trường hợp, dùng thêm \texttt{elif}. Python kiểm tra lần lượt từ trên xuống và chỉ thực hiện khối lệnh của \textbf{điều kiện đúng đầu tiên}.
+
+\begin{lstlisting}[caption={Nhiều nhánh với if-elif-else}]
+bmi = 23.5
+if bmi < 18.5:
+    group = "thieu can"
+elif bmi < 25:
+    group = "binh thuong"
+elif bmi < 30:
+    group = "thua can"
+else:
+    group = "beo phi"
+print(group)        # binh thuong
+\end{lstlisting}
+
+Một chuỗi \texttt{if-elif} lồng nhau trên các đặc trưng chính là cách một \textbf{cây quyết định} đưa ra dự đoán. Khác biệt duy nhất là cây quyết định tự học các ngưỡng như 18,5 hay 25 từ dữ liệu (Chương~\ref{chap:classify}).
+
+\subsection{Vòng lặp for}
+Vòng lặp \texttt{for} duyệt lần lượt từng phần tử của một dãy. Ba hàm thường đi kèm là: \texttt{range(n)} sinh dãy số $0, 1, \dots, n-1$; \texttt{zip(a, b)} duyệt song song hai dãy; \texttt{enumerate(a)} trả về đồng thời chỉ số và giá trị.
+
+\begin{lstlisting}[caption={Vòng lặp for với zip, range và enumerate}]
+y_true = [1, 0, 1, 1, 0]
+y_pred = [1, 0, 0, 1, 1]
+
+correct = 0
+for t, p in zip(y_true, y_pred):    # duyet song song hai list
+    if t == p:
+        correct += 1
+print("Do chinh xac:", correct / len(y_true))     # Do chinh xac: 0.6
+
+for epoch in range(3):              # epoch = 0, 1, 2
+    print("Epoch", epoch)
+
+for i, model in enumerate(["knn", "svm"]):  # chi so va gia tri
+    print(i, model)                 # 0 knn, roi 1 svm
+\end{lstlisting}
+
+\noindent Đoạn mã đầu tiên tính \textbf{độ chính xác} (accuracy) của một bộ phân lớp: tỉ lệ mẫu có nhãn dự đoán trùng nhãn thật, ở đây là $3/5 = 0{,}6$. Độ đo này được dùng xuyên suốt Chương~\ref{chap:classify} và được phân tích kỹ ở Chương~\ref{chap:validation}.
+
+\subsection{Vòng lặp while, break và continue}
+Vòng lặp \texttt{while} lặp lại \textbf{chừng nào điều kiện còn đúng}. Nó phù hợp khi chưa biết trước số lần lặp, ví dụ lặp một thuật toán tối ưu cho đến khi hội tụ. Đoạn mã dưới đây tìm điểm cực tiểu của hàm $f(w) = (w - 3)^2$: mỗi bước dịch $w$ ngược chiều đạo hàm $f'(w) = 2(w - 3)$ một lượng tỉ lệ với hệ số $0{,}1$, và dừng khi bước dịch đủ nhỏ. Đây chính là thuật toán \textbf{Gradient Descent}, sẽ được trình bày đầy đủ ở Chương~\ref{chap:regression}.
+
+\begin{lstlisting}[caption={Vòng lặp while: lặp đến khi hội tụ}]
+w, lr = 0.0, 0.1        # diem xuat phat va he so buoc
+step = 1.0
+n_iter = 0
+while abs(step) > 1e-4:
+    grad = 2 * (w - 3)  # dao ham cua f(w) = (w - 3)^2
+    step = lr * grad
+    w = w - step
+    n_iter += 1
+print(n_iter, round(w, 4))      # 40 2.9996
+\end{lstlisting}
+
+\noindent Lệnh \texttt{break} thoát khỏi vòng lặp ngay lập tức; lệnh \texttt{continue} bỏ qua phần còn lại của lượt hiện tại để sang lượt kế tiếp:
+
+\begin{lstlisting}[caption={Điều khiển vòng lặp bằng break và continue}]
+for k in [1, 3, 5, 7, 9]:
+    if k == 7:
+        break           # thoat vong lap
+    if k == 3:
+        continue        # bo qua k = 3
+    print(k)            # in ra 1 roi 5
+\end{lstlisting}
+
+\subsection{List comprehension}
+List comprehension tạo một list mới từ một dãy trong \textbf{một dòng lệnh}, có thể kèm điều kiện lọc. Cú pháp tổng quát: \texttt{[biểu thức for phần\_tử in dãy if điều\_kiện]}.
+
+\begin{lstlisting}[caption={List comprehension}]
+x = [1, 2, 3, 4]
+print([v ** 2 for v in x])                  # [1, 4, 9, 16]
+print([v for v in x if v % 2 == 0])         # [2, 4]
+errors = [(t - p) ** 2 for t, p in zip([3, 5], [2.5, 6])]
+print(errors)                               # [0.25, 1]
+\end{lstlisting}
+
+\noindent Vòng lặp của Python dễ viết nhưng chậm khi dữ liệu lớn. Ở Chương~\ref{chap:numpy-pandas}, phần lớn các vòng lặp trên sẽ được thay bằng phép toán \textbf{vector hóa} của NumPy, nhanh hơn hàng chục đến hàng trăm lần.
+
+\section{Hàm}
+\label{sec:python-functions}
+
+Hàm (function) đóng gói một đoạn mã thành một khối có tên để dùng lại nhiều lần. Hàm được định nghĩa bằng từ khóa \texttt{def}, nhận các \textbf{tham số} và trả kết quả về bằng \texttt{return}. Chuỗi đặt ngay dưới dòng \texttt{def} là \textbf{docstring}, mô tả công dụng của hàm.
+
+\subsection{Định nghĩa hàm}
+Hàm dưới đây tính \textbf{sai số bình phương trung bình} (MSE), độ đo cơ bản của bài toán hồi quy ở Chương~\ref{chap:regression}:
+\begin{equation*}
+    \mathrm{MSE} = \frac{1}{n}\sum_{i=1}^{n}\big(y_i - \hat{y}_i\big)^2 .
+\end{equation*}
+
+\begin{lstlisting}[caption={Định nghĩa hàm tính MSE}]
+def mse(y_true, y_pred):
+    """Tinh sai so binh phuong trung binh."""
+    total = 0
+    for t, p in zip(y_true, y_pred):
+        total += (t - p) ** 2
+    return total / len(y_true)
+
+print(mse([3, 5, 2], [2.5, 6, 2]))      # 0.4166666666666667
+\end{lstlisting}
+
+\noindent Kiểm tra bằng tay: $\big[(3 - 2{,}5)^2 + (5 - 6)^2 + (2 - 2)^2\big] / 3 = (0{,}25 + 1 + 0)/3 \approx 0{,}4167$.
+
+\subsection{Tham số mặc định và tham số từ khóa}
+Tham số có thể được gán \textbf{giá trị mặc định}, khi đó người gọi hàm có thể bỏ qua nó. Khi gọi hàm, có thể truyền tham số theo \textbf{tên} (tham số từ khóa) thay vì theo vị trí. Mọi mô hình của scikit-learn đều nhận siêu tham số theo cách này, ví dụ \texttt{KNeighborsClassifier(n\_neighbors=5)}.
+
+\begin{lstlisting}[caption={Tham số mặc định và tham số từ khóa}]
+def scale(x, factor=1.0, shift=0.0):
+    return x * factor + shift
+
+print(scale(10))            # 10.0   (dung gia tri mac dinh)
+print(scale(10, 0.5))       # 5.0    (truyen theo vi tri)
+print(scale(10, shift=-3))  # 7.0    (truyen theo ten)
+\end{lstlisting}
+
+\subsection{Trả về nhiều giá trị}
+Khi \texttt{return} nhiều giá trị cách nhau bởi dấu phẩy, Python đóng gói chúng thành một tuple. Bên gọi hàm dùng phép tách tuple để nhận từng giá trị. Hàm \texttt{train\_test\_split} của scikit-learn trả về bốn giá trị theo đúng cách này.
+
+\begin{lstlisting}[caption={Hàm trả về nhiều giá trị}]
+def min_max(values):
+    return min(values), max(values)
+
+lo, hi = min_max([4, 8, 1, 6])
+print(lo, hi)               # 1 8
+\end{lstlisting}
+
+\subsection{Hàm lambda}
+Hàm \texttt{lambda} là hàm ẩn danh viết trên một dòng, thường dùng làm tham số cho một hàm khác. Ví dụ, khóa sắp xếp của \texttt{sorted}, hay hàm áp dụng lên từng phần tử của một cột dữ liệu bằng phương thức \texttt{apply} của Pandas (Chương~\ref{chap:numpy-pandas}).
+
+\begin{lstlisting}[caption={Hàm lambda làm khóa sắp xếp}]
+square = lambda v: v ** 2
+print(square(4))                                    # 16
+results = [("knn", 0.91), ("svm", 0.95), ("tree", 0.88)]
+best = sorted(results, key=lambda r: r[1], reverse=True)[0]
+print(best)                                         # ('svm', 0.95)
+\end{lstlisting}
+
+\section{Module và thư viện}
+\label{sec:python-import}
+
+Một \textbf{module} là một tệp mã Python chứa các hàm, lớp và hằng số. Một \textbf{thư viện} (package) gồm nhiều module. Lệnh \texttt{import} nạp module vào chương trình theo ba cách:
+
+\begin{lstlisting}[caption={Ba cách import}]
+import math                     # nap ca module, goi qua ten module
+from math import sqrt, pi       # chi nap mot so ten
+import numpy as np              # dat ten viet tat theo quy uoc
+
+print(math.floor(2.7), sqrt(16), round(pi, 2))   # 2 4.0 3.14
+print(np.mean([1, 2, 3, 4]))                     # 2.5
+\end{lstlisting}
+
+Cộng đồng Python thống nhất một số tên viết tắt mà mọi tài liệu đều dùng. Giáo trình này tuân theo các quy ước đó:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{6.4cm}|p{3.6cm}|p{3.8cm}|}
+\hline
+\textbf{Câu lệnh} & \textbf{Công dụng} & \textbf{Trình bày ở} \\
+\hline
+\texttt{import numpy as np} & Tính toán trên mảng & Chương~\ref{chap:numpy-pandas} \\
+\hline
+\texttt{import pandas as pd} & Bảng dữ liệu & Chương~\ref{chap:numpy-pandas} \\
+\hline
+\texttt{import matplotlib.pyplot as plt} & Vẽ biểu đồ & Chương~\ref{chap:numpy-pandas} \\
+\hline
+\texttt{from sklearn... import ...} & Các mô hình học máy & Chương~\ref{chap:preprocessing} trở đi \\
+\hline
+\texttt{import torch} & Tự động tính đạo hàm & Lab 8, Chương~\ref{chap:labs} \\
+\hline
+\end{tabular}
+\caption{Tên viết tắt quy ước của các thư viện dùng trong giáo trình}
+\end{table}
+
+Các thư viện này có sẵn trong bộ cài Anaconda (Chương~\ref{chap:intro}). Nếu dùng bản Python cài riêng, có thể cài thêm bằng lệnh \texttt{pip install numpy pandas matplotlib scikit-learn} trong cửa sổ dòng lệnh.
+
 \section{Tóm tắt chương}
 Trong chương này, chúng ta đã nắm được:
 \begin{itemize}
-    \item Cách khai báo biến và chi tiết các kiểu dữ liệu cơ bản trong Python.
-    \item Các toán tử số học và toán tử gán mở rộng.
-    \item Cách sử dụng thư viện \texttt{math} cho các hàm toán học phức tạp.
-    \item Cấu trúc dữ liệu nâng cao: List, Tuple, Dictionary.
-    \item Cấu trúc rẽ nhánh trong Python.
+    \item Cách khai báo biến, các kiểu dữ liệu cơ bản, chuyển đổi kiểu và định dạng chuỗi bằng f-string.
+    \item Các toán tử số học, toán tử gán mở rộng, toán tử so sánh và toán tử logic.
+    \item Cách sử dụng thư viện \texttt{math} cho các hàm toán học trên từng số.
+    \item Bốn cấu trúc dữ liệu: List (có thứ tự, sửa được), Tuple (không sửa được), Dictionary (cặp khóa -- giá trị), Set (không trùng lặp).
+    \item Cấu trúc rẽ nhánh \texttt{if-elif-else}; vòng lặp \texttt{for} với \texttt{range}, \texttt{zip}, \texttt{enumerate}; vòng lặp \texttt{while} với \texttt{break}, \texttt{continue}; list comprehension.
+    \item Định nghĩa hàm bằng \texttt{def}, tham số mặc định, tham số từ khóa, trả về nhiều giá trị và hàm \texttt{lambda}.
+    \item Nạp thư viện bằng \texttt{import} và các tên viết tắt quy ước \texttt{np}, \texttt{pd}, \texttt{plt}.
 \end{itemize}
+
+\section{Bài tập}
+\begin{enumerate}
+    \item Cho list điểm \texttt{[7.5, 8, 6, 9.5, 5]}. Chỉ dùng vòng lặp \texttt{for}, không dùng thư viện, hãy tính điểm trung bình và độ lệch chuẩn $s = \sqrt{\frac{1}{n}\sum_i (x_i - \bar{x})^2}$. In kết quả với hai chữ số thập phân bằng f-string.
+    \item Viết hàm \texttt{accuracy(y\_true, y\_pred)} trả về tỉ lệ dự đoán đúng. Kiểm tra với hai list ở ví dụ vòng lặp \texttt{for} (kết quả phải là $0{,}6$), rồi viết lại thân hàm bằng một dòng list comprehension.
+    \item Dùng dictionary đếm số lần xuất hiện của mỗi từ trong câu \texttt{"the cat and the hat and the bat"}. Đây là ý tưởng của phương pháp Count Vectorizer ở Chương~\ref{chap:preprocessing}.
+    \item Viết hàm \texttt{label\_encode(values)} gán cho mỗi giá trị khác nhau một số nguyên theo thứ tự xuất hiện. Hàm trả về hai giá trị: list mã số và dictionary ánh xạ. Ví dụ: \texttt{["red", "green", "blue", "red"]} cho \texttt{[0, 1, 2, 0]} và \texttt{\{"red": 0, "green": 1, "blue": 2\}}.
+    \item Sửa vòng lặp \texttt{while} tìm cực tiểu của $f(w) = (w - 3)^2$ để thử các hệ số bước $0{,}1$; $0{,}5$; $0{,}9$ và $1{,}1$. Thêm điều kiện dừng sau tối đa 1000 bước. Đếm số bước trong từng trường hợp. Với hệ số nào $w$ không tiến về 3? Hãy giải thích bằng cách viết $w - 3$ sau mỗi bước theo $w - 3$ ở bước trước.
+    \item Dùng list comprehension tạo list bình phương của các số chẵn từ 0 đến 20. Viết lại bằng vòng lặp \texttt{for} thông thường và so sánh độ dài hai cách viết.
+\end{enumerate}
+
+% ---------------------------------------------------------
+\section*{Tài liệu tham khảo của chương}
+\addcontentsline{toc}{section}{Tài liệu tham khảo của chương}
+% ---------------------------------------------------------
+\begin{enumerate}
+    \item Lutz, M. (2013). \textit{Learning Python} (5th ed.). O'Reilly Media.
+    \item Python Software Foundation. \textit{The Python Tutorial}. \url{https://docs.python.org/3/tutorial/}
+    \item Sarkar, D., Bali, R., \& Sharma, T. (2018). \textit{Practical Machine Learning with Python}, Chương 2. Apress.
+\end{enumerate}

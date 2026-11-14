@@ -329,3 +329,6 @@ TSWLatexianTemp*
 # option is specified. Footnotes are the stored in a file with suffix Notes.bib.
 # Uncomment the next line to have this generated file ignored.
 #*Notes.bib
+
+# Du lieu thuc hanh: chua thong tin ca nhan (Banking.xlsx) va ~42.000 anh -> khong dua len GitHub
+data/

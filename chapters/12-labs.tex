@@ -1,0 +1,703 @@
+% =========================================================
+% CHUONG: THUC HANH TONG HOP (LABS)
+% Nguon: cac notebook trong thu muc baitap/
+%   Lab01.ipynb, BTTL.ipynb, Reduce.ipynb, Untitled0.ipynb, 1250080036.ipynb, BTTH2.ipynb
+% =========================================================
+
+\chapter{Thực hành tổng hợp \\ (Labs)}
+\label{chap:labs}
+
+Các chương trước trình bày từng thuật toán riêng lẻ. Chương này đặt chúng vào \textbf{quy trình làm việc thực tế} thông qua tám bài thực hành. Bảy bài đầu được xây dựng từ các notebook của lớp học (thư mục \texttt{baitap/}); bài cuối cùng ứng dụng Gradient Descent, cài đặt bằng PyTorch. Mỗi bài gồm: mục tiêu, dữ liệu, các bước thực hiện kèm mã nguồn và kết quả thu được khi chạy.
+
+\noindent Sau khi hoàn thành chương này, người học có khả năng:
+\begin{itemize}
+    \item Thực hiện trọn vẹn một quy trình học máy: đọc dữ liệu, tiền xử lý, khảo sát tương quan, huấn luyện nhiều mô hình, tinh chỉnh siêu tham số và đánh giá.
+    \item Đánh giá mô hình đúng cách: chia dữ liệu theo thời gian với chuỗi thời gian và luôn so sánh với một \textbf{mô hình cơ sở} (baseline) đơn giản.
+    \item Tìm và sửa lỗi lập trình trong cài đặt thủ công SVD/PCA.
+    \item Cài đặt Gradient Descent theo lô nhỏ bằng PyTorch và kiểm chứng kết quả với lời giải tay.
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|p{5.6cm}|p{4.2cm}|}
+\hline
+\textbf{Notebook} & \textbf{Nội dung} & \textbf{Liên hệ} \\
+\hline
+\texttt{Lab01.ipynb} & Hồi quy giá nhà Ames Housing (Lab 1) & Chương~\ref{chap:regression}, \ref{chap:ensemble} \\ \hline
+\texttt{BTTL.ipynb} & Dự đoán điểm tín dụng ngân hàng (Lab 2) & Chương~\ref{chap:validation} \\ \hline
+\texttt{Reduce.ipynb} & Nội suy, RobustScaler, SVD, PCA tự cài đặt (Lab 3) & Chương~\ref{chap:preprocessing}, \ref{chap:reduce-dimension} \\ \hline
+\texttt{Untitled0.ipynb} & Dự báo giá cổ phiếu VNM (Lab 4) & Chương~\ref{chap:regression} \\ \hline
+\texttt{1250080036.ipynb} & Nhận dạng chữ cái viết tay (Lab 5) & Chương~\ref{chap:classify}, \ref{chap:ensemble} \\ \hline
+\texttt{BTTH2.ipynb} & Chữ số viết tay (Lab 6), cảm xúc bình luận tiếng Việt (Lab 7) & Chương~\ref{chap:preprocessing}, \ref{chap:classify} \\ \hline
+--- & Gradient Descent với PyTorch (Lab 8) & Chương~\ref{chap:regression}, \ref{chap:classify} \\ \hline
+\texttt{KMeans}, \texttt{DBScanEx} & Ví dụ phân cụm & Đã dùng ở Chương~\ref{chap:clustering} \\ \hline
+\texttt{PCAExample}, \texttt{SVDEXample} & Ví dụ giảm chiều & Đã dùng ở Chương~\ref{chap:reduce-dimension} \\ \hline
+\texttt{TFIDF} & Vector hóa văn bản & Đã dùng ở Chương~\ref{chap:preprocessing} \\ \hline
+\end{tabular}
+\caption{Các notebook trong thư mục \texttt{baitap/} và vị trí sử dụng trong giáo trình}
+\end{table}
+
+\paragraph{Chuẩn bị môi trường.} Ngoài bộ cài đặt chuẩn, các bài thực hành cần thêm: \texttt{mlxtend} (vẽ ma trận tương quan, ma trận biểu đồ phân tán), \texttt{openpyxl} (đọc tệp Excel), \texttt{yfinance} (tải dữ liệu chứng khoán), \texttt{opencv-python} (đọc ảnh), \texttt{pyvi} (tách từ tiếng Việt) và \texttt{torch} (PyTorch):
+\begin{lstlisting}[language=bash, caption={Cài đặt thư viện cho các bài thực hành}]
+pip install scikit-learn pandas matplotlib seaborn mlxtend openpyxl
+pip install yfinance opencv-python pyvi torch
+\end{lstlisting}
+
+\paragraph{Dữ liệu.} Mọi tệp dữ liệu được đặt trong thư mục \texttt{data/}, cạnh notebook: \texttt{AmesHousing.txt} (Lab 1, tải tại \url{http://jse.amstat.org/v19n3/decock/AmesHousing.txt}), \texttt{Banking.xlsx} (Lab 2), thư mục ảnh \texttt{alpha2/} (Lab 5) và \texttt{handdigits/} (Lab 6), các tệp \texttt{Train.csv}, \texttt{Dev.csv}, \texttt{Test.csv} (Lab 7). Lab 4 tải dữ liệu trực tiếp qua Internet.
+
+% =========================================================
+\section{Lab 1 -- Hồi quy giá nhà Ames Housing}
+\label{sec:lab-ames}
+% =========================================================
+
+\paragraph{Mục tiêu.} Dự đoán giá bán \texttt{SalePrice} từ năm đặc trưng: chất lượng tổng thể (\texttt{Overall Qual}, thang 1--10), tình trạng (\texttt{Overall Cond}), diện tích sàn ở (\texttt{Gr Liv Area}), diện tích tầng hầm (\texttt{Total Bsmt SF}) và có điều hòa trung tâm hay không (\texttt{Central Air}, Y/N). So sánh hồi quy tuyến tính, hồi quy đa thức và các mô hình cây.
+
+\subsection{Đọc dữ liệu và tiền xử lý}
+
+\begin{lstlisting}[caption={Lab 1 -- đọc và tiền xử lý dữ liệu}]
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+
+cols = ["Overall Qual", "Overall Cond", "Gr Liv Area",
+        "Central Air", "Total Bsmt SF", "SalePrice"]
+df = pd.read_csv("data/AmesHousing.txt", usecols=cols, sep="\t")
+
+# Central Air chi co 2 gia tri Y/N -> ma hoa 0/1
+df["Central Air"] = LabelEncoder().fit_transform(df["Central Air"])
+
+print(df.isna().sum())          # Total Bsmt SF thieu 1 gia tri
+df = df.dropna()                # bo 1 dong: 2930 -> 2929 dong
+\end{lstlisting}
+
+Tham số \texttt{usecols} giúp chỉ đọc những cột cần thiết. Vì \texttt{Central Air} chỉ có hai giá trị, \texttt{LabelEncoder} cho kết quả tương đương mã hóa nhị phân và không tạo thứ tự giả (xem Chương~\ref{chap:preprocessing}). Chỉ một dòng bị thiếu trên 2930 dòng nên xóa dòng là chấp nhận được.
+
+\subsection{Khảo sát tương quan}
+
+\begin{lstlisting}[caption={Lab 1 -- ma trận tương quan và ma trận biểu đồ phân tán}]
+import matplotlib.pyplot as plt
+from mlxtend.plotting import heatmap, scatterplotmatrix
+
+cols_con = ["Overall Qual", "Overall Cond", "Gr Liv Area", "Total Bsmt SF", "SalePrice"]
+heatmap(df[cols_con].corr().values, row_names=cols_con, column_names=cols_con)
+plt.show()
+scatterplotmatrix(df[cols_con].values, names=cols_con, figsize=(20, 10))
+plt.show()
+\end{lstlisting}
+
+\hinhchuachen{ch-labs-ames-heatmap.png}{Ma trận hệ số tương quan Pearson giữa các biến số của Ames Housing (kết quả chạy \texttt{Lab01.ipynb}).}{fig:lab-ames-heatmap}
+
+\hinhchuachen{ch-labs-ames-scatter.png}{Ma trận biểu đồ phân tán: đường chéo là histogram của từng biến, các ô còn lại là biểu đồ phân tán từng cặp biến.}{fig:lab-ames-scatter}
+
+Ma trận tương quan cho thấy \texttt{SalePrice} tương quan mạnh với \texttt{Overall Qual} ($r = 0{,}80$), \texttt{Gr Liv Area} ($0{,}71$) và \texttt{Total Bsmt SF} ($0{,}63$), nhưng gần như không tương quan với \texttt{Overall Cond} ($-0{,}10$). Các đặc trưng cũng tương quan với nhau (chẳng hạn \texttt{Overall Qual} và \texttt{Gr Liv Area}: $0{,}57$) --- dấu hiệu đa cộng tuyến ở mức vừa phải. Ma trận biểu đồ phân tán còn cho thấy quan hệ giữa giá và diện tích có dạng ``quạt'' (phương sai tăng theo giá trị), và một vài căn diện tích rất lớn nhưng giá thấp --- chính là các ngoại lai đã bàn ở Chương~\ref{chap:preprocessing}.
+
+\subsection{Huấn luyện và so sánh mô hình}
+
+\begin{lstlisting}[caption={Lab 1 -- huấn luyện các mô hình}]
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import (RandomForestRegressor, AdaBoostRegressor,
+                              HistGradientBoostingRegressor)
+
+X = df.drop(columns="SalePrice")
+y = df["SalePrice"]
+X_train, X_test, y_train, y_test = train_test_split(X, y)   # 2196 / 733 dong
+
+lg = LinearRegression().fit(X_train, y_train)
+print(lg.score(X_train, y_train), lg.score(X_test, y_test))  # R^2 train, test
+
+pf = PolynomialFeatures(degree=2)                 # them x_i^2 va x_i*x_j
+X_train_pf = pf.fit_transform(X_train)
+X_test_pf = pf.transform(X_test)                  # chi transform tap test
+lg2 = LinearRegression().fit(X_train_pf, y_train)
+
+dt = DecisionTreeRegressor().fit(X_train, y_train)
+grid = GridSearchCV(DecisionTreeRegressor(), param_grid={
+    "max_depth": [5, 6, 7],
+    "min_samples_split": [2, 3, 4],
+    "min_samples_leaf": [1, 2, 3, 4]})
+grid.fit(X_train, y_train)
+print(grid.best_score_, grid.best_params_)
+
+rf = RandomForestRegressor().fit(X_train, y_train)
+ada = AdaBoostRegressor().fit(X_train, y_train)
+hist = HistGradientBoostingRegressor().fit(X_train, y_train)
+\end{lstlisting}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|c|l|}
+\hline
+\textbf{Mô hình} & \textbf{$R^2$ train} & \textbf{$R^2$ test} & \textbf{Nhận định} \\
+\hline
+Hồi quy tuyến tính & 0,758 & 0,782 & Thiếu khớp nhẹ \\ \hline
+Hồi quy đa thức bậc 2 & 0,848 & 0,850 & Cải thiện rõ, không quá khớp \\ \hline
+Cây quyết định (mặc định) & 0,995 & 0,769 & \textbf{Quá khớp} nặng \\ \hline
+Cây quyết định (đã tinh chỉnh) & 0,877 & 0,823 & Khoảng cách train/test thu hẹp \\ \hline
+Random Forest (mặc định) & 0,974 & \textbf{0,853} & Tốt nhất trên tập test \\ \hline
+AdaBoost (mặc định) & 0,824 & 0,779 & Kém nhất nhóm cây \\ \hline
+HistGradientBoosting (mặc định) & 0,903 & 0,839 & Tốt, nhanh \\ \hline
+\end{tabular}
+\caption{Kết quả Lab 1 khi chạy \texttt{Lab01.ipynb}; các con số thay đổi nhẹ giữa các lần chạy vì chia dữ liệu ngẫu nhiên}
+\label{tab:lab-ames-r2}
+\end{table}
+
+Bảng~\ref{tab:lab-ames-r2} minh họa trọn vẹn đánh đổi bias -- variance (Chương~\ref{chap:validation}): mô hình tuyến tính quá đơn giản; thêm đặc trưng bậc hai giúp nắm bắt quan hệ phi tuyến (ví dụ tương tác \texttt{Overall Qual} $\times$ \texttt{Gr Liv Area}); cây quyết định không giới hạn độ sâu học thuộc tập huấn luyện ($R^2 = 0{,}995$) nhưng tổng quát kém; giới hạn độ sâu bằng \texttt{GridSearchCV} hoặc lấy trung bình nhiều cây (Random Forest) khắc phục được điều đó.
+
+\paragraph{Sai số trên tập kiểm tra.} Notebook tính MSE của bốn mô hình cây: Random Forest $9{,}77 \times 10^8$, HistGradientBoosting $1{,}07 \times 10^9$, Decision Tree $1{,}09 \times 10^9$, AdaBoost $1{,}47 \times 10^9$. Lấy căn bậc hai để đưa về đơn vị USD: RMSE lần lượt khoảng \textbf{31\,250}, \textbf{32\,720}, \textbf{33\,050} và \textbf{38\,330} USD --- dễ diễn giải hơn nhiều so với MSE.
+
+\subsection{Mức độ quan trọng của đặc trưng}
+
+\hinhchuachen{ch-labs-ames-coef.png}{Hệ số hồi quy tuyến tính được vẽ như ``mức độ quan trọng'' --- một cách diễn giải \textbf{dễ gây hiểu nhầm} (xem nhận xét bên dưới).}{fig:lab-ames-coef}
+
+\hinhchuachen{ch-labs-ames-rf-importance.png}{Mức độ quan trọng của đặc trưng theo Random Forest (\texttt{feature\_importances\_}): \texttt{Overall Qual} chiếm khoảng 65\%.}{fig:lab-ames-rf-imp}
+
+Hồi quy tuyến tính cho hệ số lớn nhất ở \texttt{Overall Qual} ($\approx 27\,512$) và \texttt{Central Air} ($\approx 13\,066$), trong khi \texttt{Gr Liv Area} chỉ có hệ số $\approx 50$. Random Forest lại xếp hạng: \texttt{Overall Qual} (0,650), \texttt{Gr Liv Area} (0,203), \texttt{Total Bsmt SF} (0,121), \texttt{Overall Cond} (0,019), \texttt{Central Air} (0,006). Hai bảng xếp hạng mâu thuẫn ở \texttt{Central Air} --- lý do được giải thích ngay dưới đây.
+
+% =========================================================
+\section{Lab 2 -- Dự đoán điểm tín dụng: khi dữ liệu không có thông tin}
+\label{sec:lab-bank}
+% =========================================================
+
+\paragraph{Mục tiêu.} Áp dụng đúng quy trình của Lab 1 cho tệp \texttt{Banking.xlsx}: dự đoán điểm tín dụng (\texttt{Credit score}) từ giới tính (\texttt{gender}) và số tiền đầu tư hằng tháng (\texttt{Amountinvestedmonthly}). Bài này được đưa vào giáo trình chính vì nó \textbf{thất bại} --- và thất bại theo cách rất đáng học.
+
+\begin{lstlisting}[caption={Lab 2 -- đọc dữ liệu từ Excel và chạy cùng quy trình}]
+cols = ["gender", "Amountinvestedmonthly", "Credit score"]
+df = pd.read_excel("data/Banking.xlsx", usecols=cols)   # can openpyxl
+df["gender"] = LabelEncoder().fit_transform(df["gender"])
+print(df.isna().sum())        # Credit score thieu 4, Amountinvestedmonthly thieu 331
+df = df.dropna()              # con 6708 dong
+
+X = df.drop(columns="Credit score")
+y = df["Credit score"]
+X_train, X_test, y_train, y_test = train_test_split(X, y)   # 5031 / 1677 dong
+\end{lstlisting}
+
+\hinhchuachen{ch-labs-bank-heatmap.png}{Ma trận tương quan của Lab 2: \texttt{Credit score} gần như không tương quan với cả hai đặc trưng ($r \approx 0{,}00$ và $0{,}03$).}{fig:lab-bank-heatmap}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Mô hình} & \textbf{$R^2$ train} & \textbf{$R^2$ test} \\
+\hline
+Hồi quy tuyến tính & 0,001 & 0,001 \\ \hline
+Hồi quy đa thức bậc 2 & 0,001 & 0,000 \\ \hline
+Cây quyết định (mặc định) & \textbf{0,957} & $\mathbf{-0{,}881}$ \\ \hline
+Cây quyết định (đã tinh chỉnh) & 0,015 & $-0{,}032$ \\ \hline
+Random Forest (mặc định) & 0,770 & $-0{,}297$ \\ \hline
+Random Forest (đã tinh chỉnh) & 0,053 & $-0{,}007$ \\ \hline
+AdaBoost & $-0{,}141$ & $-0{,}138$ \\ \hline
+HistGradientBoosting & 0,062 & $-0{,}023$ \\ \hline
+\end{tabular}
+\caption{Kết quả Lab 2 khi chạy \texttt{BTTL.ipynb}. Sai số trên tập test: MAE $\approx 39$ điểm, MSE $\approx 2100$ (RMSE $\approx 46$ điểm) với cả bốn mô hình cây.}
+\label{tab:lab-bank-r2}
+\end{table}
+
+% =========================================================
+\section{Lab 3 -- Nội suy, RobustScaler và tự cài đặt SVD, PCA}
+\label{sec:lab-reduce}
+% =========================================================
+
+\paragraph{Mục tiêu.} Kiểm chứng bằng tay các phép biến đổi đã học, và quan trọng hơn: học cách \textbf{phát hiện lỗi} khi tự cài đặt thuật toán bằng cách đối chiếu với thư viện.
+
+\subsection{Nội suy tuyến tính giá trị thiếu}
+
+Với dữ liệu có \textbf{thứ tự} (chuỗi thời gian, chuỗi đo liên tiếp), điền giá trị thiếu bằng trung bình cả cột (mục~\ref{sec:missing}) bỏ phí thông tin về vị trí. \textbf{Nội suy tuyến tính} nối thẳng hai giá trị đã biết ở hai bên khoảng trống:
+\[
+    x_t = x_a + \frac{t - a}{b - a}\,(x_b - x_a), \qquad a < t < b .
+\]
+
+\begin{example}[Nội suy tuyến tính]
+Chuỗi $(75, 74, ?, 84, 86, ?, ?, 95)$. Ô thứ 3 nằm giữa 74 và 84: $\frac{74 + 84}{2} = 79$. Hai ô thứ 6, 7 nằm giữa 86 và 95, bước tăng $\frac{95 - 86}{3} = 3$: điền 89 và 92.
+\end{example}
+
+\begin{lstlisting}[caption={Nội suy bằng pandas}]
+import numpy as np
+import pandas as pd
+
+s = pd.Series([75, 74, np.nan, 84, 86, np.nan, np.nan, 95])
+print(s.interpolate().tolist())   # [75.0, 74.0, 79.0, 84.0, 86.0, 89.0, 92.0, 95.0]
+\end{lstlisting}
+
+\subsection{RobustScaler tính tay}
+
+Với $x = (3, 7, 1, 6, 8, 4, 2, 5, 9, 11)$, sắp xếp được $(1, 2, 3, 4, 5, 6, 7, 8, 9, 11)$. NumPy tính tứ phân vị bằng nội suy tuyến tính tại vị trí $(n - 1)q$: $Q_1$ ở vị trí $9 \times 0{,}25 = 2{,}25$ nên $Q_1 = 3 + 0{,}25 \times (4 - 3) = 3{,}25$; tương tự $Q_3 = 7{,}75$; trung vị $= \frac{5 + 6}{2} = 5{,}5$. Công thức của RobustScaler cho
+\[
+    x' = \frac{x - \text{median}}{Q_3 - Q_1} = \frac{x - 5{,}5}{4{,}5},
+\]
+chẳng hạn $x = 3 \mapsto -0{,}556$ và $x = 11 \mapsto 1{,}222$ --- trùng khớp với kết quả của \texttt{RobustScaler}. Trung bình của $x$ là $5{,}6$, gần trung vị vì dữ liệu này không có ngoại lai.
+
+\subsection{Tự cài đặt SVD: một lỗi chỉ số tinh vi}
+
+Notebook tính SVD rút gọn cho $\mathbf{X} = \begin{pmatrix} 3 & 2 & 7 \\ 1 & 4 & 6 \end{pmatrix}$ qua trị riêng của $\mathbf{X}^\top\mathbf{X}$ (mục SVD ở Chương~\ref{chap:reduce-dimension}):
+\[
+    \mathbf{X}^\top\mathbf{X} = \begin{pmatrix} 10 & 10 & 27 \\ 10 & 20 & 38 \\ 27 & 38 & 85 \end{pmatrix},
+    \qquad \lambda \approx (110{,}69;\ 4{,}31;\ 0),
+    \qquad \sigma = \sqrt{\lambda} \approx (10{,}52;\ 2{,}08).
+\]
+Các giá trị suy biến khớp với \texttt{TruncatedSVD}, nhưng tọa độ chiếu thì \textbf{không}. Nguyên nhân nằm ở một dòng lệnh:
+
+\begin{lstlisting}[caption={Lỗi sắp xếp vector riêng theo dòng thay vì theo cột}]
+M = X.T @ X
+eigv, eigvec = np.linalg.eigh(M)          # vector rieng nam o CAC COT
+orders = np.argsort(eigv)[::-1]
+
+sigma = eigvec[orders][:, :2]             # SAI: sap xep lai cac DONG
+sigma = eigvec[:, orders][:, :2]          # DUNG: sap xep lai cac COT
+reduce = X @ sigma
+\end{lstlisting}
+
+\texttt{np.linalg.eigh} trả về vector riêng theo \textbf{cột}; \texttt{eigvec[orders]} hoán vị các \textbf{dòng}, tạo ra một ma trận không còn là các vector riêng. Kết quả sai là $\begin{pmatrix} -4{,}76 & 3{,}28 \\ -5{,}95 & 0{,}82 \end{pmatrix}$; kết quả đúng là $\begin{pmatrix} -7{,}75 & 1{,}40 \\ -7{,}12 & -1{,}53 \end{pmatrix}$, trùng với \texttt{TruncatedSVD} (sai khác về dấu là bình thường, xem Chương~\ref{chap:reduce-dimension}).
+
+\subsection{Tự cài đặt PCA: hai lỗi chồng lên nhau}
+
+Với cùng ma trận $\mathbf{X}$, trung bình cột $\bar{\mathbf{x}} = (2;\ 3;\ 6{,}5)$ và dữ liệu đã chuẩn hóa tâm là $\pm(1;\ -1;\ 0{,}5)$. Ma trận hiệp phương sai (chia $n - 1 = 1$) có đúng một trị riêng khác 0 là $\lambda_1 = 4{,}5$, vector riêng $\mathbf{w}_1 = \left(\tfrac{2}{3};\ -\tfrac{2}{3};\ \tfrac{1}{3}\right)$, và tọa độ chiếu $z = \pm 1{,}5$ --- đúng như \texttt{PCA(n\_components=1)}.
+
+Notebook lại cho $z = (6{,}43;\ 6{,}54)$ do hai lỗi:
+\begin{enumerate}
+    \item Lặp lại lỗi sắp xếp dòng \texttt{eigenvectors[orders]} như ở mục trên.
+    \item Chiếu \textbf{dữ liệu gốc} \texttt{X} thay vì dữ liệu đã chuẩn hóa tâm \texttt{M}. PCA phải chiếu $\mathbf{X} - \bar{\mathbf{x}}$.
+\end{enumerate}
+Ngoài ra notebook chia ma trận hiệp phương sai cho $n = 2$ (được $\lambda = 2{,}25$), trong khi scikit-learn chia cho $n - 1$ (được \texttt{explained\_variance\_} $= 4{,}5$). Đây không phải lỗi, nhưng cần biết để đối chiếu đúng.
+
+\begin{lstlisting}[caption={PCA tự cài đặt -- phiên bản đúng}]
+X = np.array([[3, 2, 7], [1, 4, 6]], dtype=float)
+M = X - X.mean(axis=0)                     # 1) chuan hoa tam
+S = M.T @ M / (X.shape[0] - 1)             # 2) chia n - 1 nhu scikit-learn
+eigenvalues, eigenvectors = np.linalg.eigh(S)
+orders = np.argsort(eigenvalues)[::-1]
+W = eigenvectors[:, orders[:1]]            # 3) chon theo COT
+print(eigenvalues[orders][:1])             # [4.5]
+print(M @ W)                               # [[ 1.5] [-1.5]]  (co the doi dau)
+\end{lstlisting}
+
+\paragraph{Bài học.} Khi tự cài đặt một thuật toán, \textbf{luôn đối chiếu với thư viện} trên một ví dụ nhỏ. Giá trị suy biến đúng không chứng minh được vector đúng; chỉ khi \textit{toàn bộ} đầu ra khớp (sai khác dấu được chấp nhận) mới có thể tin cài đặt của mình.
+
+% =========================================================
+\section{Lab 4 -- Dự báo giá cổ phiếu VNM: ảo ảnh $R^2 = 0{,}998$}
+\label{sec:lab-vnm}
+% =========================================================
+
+\paragraph{Mục tiêu.} Dự báo giá đóng cửa ngày mai của cổ phiếu Vinamilk (mã \texttt{VNM}, sàn HOSE) từ giá đóng cửa của 7 phiên gần nhất, bằng hồi quy tuyến tính. Đây là cách biến bài toán chuỗi thời gian thành bài toán hồi quy bằng \textbf{đặc trưng trễ} (lag features) đã giới thiệu ở Chương~\ref{chap:regression}.
+
+\begin{lstlisting}[caption={Lab 4 -- tải dữ liệu và tạo cửa sổ trượt 7 phiên}]
+import yfinance as yf
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+
+df = yf.Ticker("VNM.VN").history(period="20y")   # can ket noi Internet
+close = df["Close"].dropna().values             # bo phien thieu gia (NaN)
+
+window_size = 7
+n = len(close) - window_size
+data = {f"x{i}": close[i: n + i] for i in range(window_size)}   # 7 phien truoc
+data["y"] = close[window_size:]                                  # phien ke tiep
+df2 = pd.DataFrame(data)
+
+X, y = df2.drop(columns="y"), df2["y"]
+X_train, X_test, y_train, y_test = train_test_split(X, y)        # !!! xao tron
+lg = LinearRegression().fit(X_train, y_train)
+print(lg.score(X_train, y_train), lg.score(X_test, y_test))      # ~0.998  ~0.998
+\end{lstlisting}
+
+\hinhchuachen{ch-labs-vnm-close.png}{Giá đóng cửa (đã điều chỉnh) của cổ phiếu VNM theo thời gian, tải bằng \texttt{yfinance}.}{fig:lab-vnm}
+
+Mô hình đạt $R^2 \approx 0{,}998$ trên cả tập train lẫn tập test. Một kết quả ``quá đẹp để là thật'' --- và đúng là không thật.
+
+\subsection{Đánh giá lại: chia theo thời gian và so sánh với mô hình cơ sở}
+
+\paragraph{1. Rò rỉ dữ liệu do xáo trộn chuỗi thời gian.} \texttt{train\_test\_split} mặc định \textbf{xáo trộn} các dòng, nên tập test gồm những ngày nằm xen giữa các ngày huấn luyện. Mô hình được ``nhìn thấy'' giá của ngày hôm trước \textit{và} ngày hôm sau một điểm test --- điều không thể có khi dự báo thật. Với chuỗi thời gian phải chia theo thứ tự: huấn luyện trên quá khứ, kiểm tra trên tương lai (\texttt{shuffle=False} hoặc \texttt{TimeSeriesSplit}).
+
+\paragraph{2. Phải so sánh với mô hình cơ sở ngây thơ.} Mô hình ``giá ngày mai bằng giá hôm nay'' (naive forecast) không cần học gì cả. Chạy lại notebook với dữ liệu VNM từ 03/04/2012 đến 02/11/2026 (3773 phiên) và chia theo thời gian, 75\% đầu để huấn luyện:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Cách đánh giá} & \textbf{$R^2$ trên tập test} \\
+\hline
+Hồi quy tuyến tính, chia \textbf{xáo trộn} (như notebook) & 0,998 \\ \hline
+Hồi quy tuyến tính, chia \textbf{theo thời gian} & 0,947 \\ \hline
+Mô hình ngây thơ: $\hat{y}_{t+1} = y_t$ & 0,947 \\ \hline
+Hồi quy tuyến tính dự báo \textbf{tỉ suất sinh lời} ngày mai & $-0{,}001$ \\ \hline
+\end{tabular}
+\caption{Lab 4 đánh giá lại (dữ liệu tải ngày 02/11/2026; con số thay đổi theo thời điểm tải)}
+\label{tab:lab-vnm}
+\end{table}
+
+Khi chia đúng cách, mô hình chỉ ngang bằng mô hình ngây thơ. Hệ số hồi quy giải thích vì sao: trọng số của phiên gần nhất là $0{,}988$, sáu phiên còn lại gần 0 --- mô hình đã tự ``phát hiện'' ra rằng dự báo tốt nhất là \textit{lấy giá hôm nay}.
+
+\paragraph{3. $R^2$ cao trên giá là chỉ số gây hiểu nhầm.} Giá cổ phiếu là chuỗi có xu hướng, giá hôm nay đã gần bằng giá hôm qua, nên bất kỳ mô hình nào ``chép lại'' giá gần nhất cũng có $R^2$ rất cao. Đại lượng có ý nghĩa đầu tư là \textbf{tỉ suất sinh lời} $r_t = (y_t - y_{t-1})/y_{t-1}$. Dự báo $r_{t+1}$ từ 7 tỉ suất trước đó cho $R^2 \approx 0$: các biến động giá trong quá khứ gần như không chứa thông tin về biến động ngày mai --- phù hợp với \textbf{giả thuyết thị trường hiệu quả} dạng yếu (Fama, 1970).
+
+\begin{lstlisting}[caption={Lab 4 -- đánh giá đúng: chia theo thời gian và so sánh với mô hình ngây thơ}]
+import numpy as np
+from sklearn.metrics import r2_score
+
+cut = int(0.75 * len(df2))                       # 75% dau = qua khu
+X_tr, X_te = X.iloc[:cut], X.iloc[cut:]
+y_tr, y_te = y.iloc[:cut], y.iloc[cut:]
+
+lg = LinearRegression().fit(X_tr, y_tr)
+print("R2 hoi quy  :", lg.score(X_te, y_te))
+print("R2 ngay tho :", r2_score(y_te, X_te["x6"]))   # x6 = gia phien gan nhat
+print("He so       :", lg.coef_.round(3))
+
+# Du bao ti suat sinh loi thay vi gia
+ret = pd.Series(close).pct_change().dropna().values
+m = len(ret) - window_size
+Xr = np.column_stack([ret[i: m + i] for i in range(window_size)])
+yr = ret[window_size:]
+c = int(0.75 * len(yr))
+print("R2 loi suat :", LinearRegression().fit(Xr[:c], yr[:c]).score(Xr[c:], yr[c:]))
+\end{lstlisting}
+
+\paragraph{4. Một số lưu ý khác.} Cột \texttt{Close} của \texttt{yfinance} là giá đã điều chỉnh theo cổ tức và chia tách cổ phiếu, nên giá năm 2012 thấp hơn giá giao dịch thực tế khi đó. Dữ liệu tải về thay đổi theo ngày chạy, vì vậy kết quả của mỗi người sẽ khác nhau đôi chút; hãy lưu dữ liệu ra tệp CSV để tái lập được thí nghiệm.
+
+% =========================================================
+\section{Lab 5 -- Nhận dạng chữ cái viết tay từ điểm ảnh}
+\label{sec:lab-handwriting}
+% =========================================================
+
+\paragraph{Mục tiêu.} Phân loại ảnh chữ cái viết tay thường \texttt{a}--\texttt{z} bằng KNN, cây quyết định và Random Forest; đọc ảnh bằng OpenCV, biến ảnh thành vector đặc trưng, tinh chỉnh siêu tham số và đánh giá bài toán nhiều lớp.
+
+\paragraph{Dữ liệu.} Thư mục \texttt{alpha2/} có một thư mục con cho mỗi chữ cái, tổng cộng 1144 ảnh của 26 lớp (đúng 44 ảnh mỗi lớp). Tập kiểm tra gồm 286 ảnh. Đoán ngẫu nhiên đều giữa 26 lớp chỉ đạt khoảng $1/26 \approx 3{,}8\%$; đây là mốc để so sánh các kết quả dưới đây.
+
+\subsection{Từ ảnh đến ma trận đặc trưng}
+
+Ảnh xám là ma trận số nguyên độ sáng. Các mô hình của chương trước nhận mỗi mẫu là một vector, nên mỗi ảnh được đưa về cùng kích thước $64 \times 64$ rồi ``duỗi phẳng'' thành vector $64 \times 64 = 4096$ chiều.
+
+\begin{lstlisting}[caption={Lab 5 -- đọc ảnh và tạo ma trận đặc trưng}]
+# pip install opencv-python
+from os import listdir
+import cv2
+import numpy as np
+
+X, y = [], []
+for label in listdir("data/alpha2"):
+    for name in listdir(f"data/alpha2/{label}"):
+        img = cv2.imread(f"data/alpha2/{label}/{name}", cv2.IMREAD_GRAYSCALE)
+        img = cv2.resize(img, (64, 64))
+        X.append(img.flatten())          # ma tran 64 x 64 -> vector 4096 chieu
+        y.append(label)
+X, y = np.array(X), np.array(y)
+print(X.shape, y.shape)                  # (1144, 4096) (1144,)
+\end{lstlisting}
+
+\hinhchuachen{ch-labs-hw-sample.png}{Một ảnh chữ \texttt{a} sau khi đưa về $64 \times 64$ điểm ảnh; màu do \texttt{plt.imshow} tự gán cho độ sáng (kết quả chạy notebook).}{fig:lab-hw-sample}
+
+\subsection{Kết quả}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+\textbf{Mô hình} & \textbf{Train} & \textbf{Test} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
+\hline
+KNN mặc định & 0,621 & 0,315 & --- & --- & --- \\ \hline
+Cây quyết định (\texttt{max\_depth=30}) & 1,000 & 0,234 & 0,228 & 0,223 & 0,218 \\ \hline
+Random Forest (\texttt{max\_depth=50}) & 1,000 & 0,343 & 0,381 & 0,335 & 0,333 \\ \hline
+Random Forest (500 cây, \texttt{max\_depth=20}) & 1,000 & \textbf{0,437} & 0,450 & 0,431 & 0,424 \\ \hline
+\end{tabular}
+\caption{Kết quả Lab 5 khi chạy notebook; precision, recall, F1 lấy trung bình macro trên tập kiểm tra. Notebook không tính ba độ đo này cho KNN thật (xem nhận xét 1)}
+\label{tab:lab-hw}
+\end{table}
+
+\hinhchuachen{ch-labs-hw-cm.png}{Ma trận nhầm lẫn của ba mô hình trong notebook, từ trái sang phải: mô hình được đặt tên \texttt{knn} (thực chất là Random Forest, xem nhận xét 1), cây quyết định và Random Forest tốt nhất.}{fig:lab-hw-cm}
+
+Mô hình tốt nhất đúng 43,7\%, gấp hơn 11 lần đoán ngẫu nhiên, nhưng vẫn còn xa mức dùng được. Ma trận nhầm lẫn bên phải cho thấy lỗi có quy luật: chữ \texttt{q} hay bị nhận thành \texttt{g} (5 ảnh), \texttt{t} thành \texttt{l} (4 ảnh), \texttt{i} thành \texttt{l} (3 ảnh), \texttt{a} thành \texttt{o} (3 ảnh) --- đều là những cặp có hình dạng gần nhau.
+
+% =========================================================
+\section{Lab 6 -- Nhận dạng chữ số viết tay}
+\label{sec:lab-digits}
+% =========================================================
+
+\paragraph{Mục tiêu.} Áp dụng đúng quy trình của Lab 5 cho bài toán chữ số, để thấy cùng một thuật toán cho kết quả khác hẳn khi dữ liệu thay đổi. Thư mục \texttt{data/handdigits/} gồm 42\,000 ảnh xám $28 \times 28$ của 10 chữ số, mỗi lớp có từ 3795 đến 4684 ảnh. Ảnh được duỗi phẳng thành vector 784 chiều.
+
+\hinhchuachen{ch-labs-digits-samples.png}{Mỗi chữ số một ảnh mẫu trong thư mục \texttt{handdigits}.}{fig:lab-digits-samples}
+
+\begin{lstlisting}[caption={Lab 6 -- đọc ảnh, chia dữ liệu phân tầng và so sánh các mô hình}]
+from os import listdir
+import cv2
+import numpy as np
+from sklearn.decomposition import PCA
+from sklearn.dummy import DummyClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import f1_score
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.pipeline import make_pipeline
+from sklearn.tree import DecisionTreeClassifier
+
+X, y = [], []
+for num in listdir("data/handdigits"):
+    for name in listdir(f"data/handdigits/{num}"):
+        img = cv2.imread(f"data/handdigits/{num}/{name}", cv2.IMREAD_GRAYSCALE)
+        X.append(img.flatten())
+        y.append(int(num))
+X, y = np.array(X), np.array(y)                     # (42000, 784) (42000,)
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.25, stratify=y,
+                                          random_state=42)
+models = {
+    "Dummy": DummyClassifier(strategy="most_frequent"),
+    "KNN": KNeighborsClassifier(n_jobs=-1),
+    "Decision Tree": DecisionTreeClassifier(max_depth=12, random_state=42),
+    "Random Forest": RandomForestClassifier(n_jobs=-1, random_state=42),
+    "PCA + KNN": make_pipeline(PCA(n_components=50, random_state=42),
+                               KNeighborsClassifier(n_jobs=-1)),
+}
+for name, m in models.items():
+    p = m.fit(X_tr, y_tr).predict(X_te)
+    print(name, round((p == y_te).mean(), 3), round(f1_score(y_te, p, average="macro"), 3))
+\end{lstlisting}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Mô hình} & \textbf{Accuracy} & \textbf{F1 macro} \\
+\hline
+Dummy (luôn đoán lớp đông nhất) & 0,112 & 0,020 \\ \hline
+Decision Tree (\texttt{max\_depth=12}) & 0,839 & 0,837 \\ \hline
+Random Forest (mặc định) & 0,956 & 0,956 \\ \hline
+KNN ($K = 5$) & 0,965 & 0,964 \\ \hline
+PCA (50 thành phần) + KNN & \textbf{0,970} & \textbf{0,970} \\ \hline
+\end{tabular}
+\caption{Kết quả Lab 6 trên 10\,500 ảnh kiểm tra, \texttt{random\_state=42}}
+\label{tab:lab-digits}
+\end{table}
+
+\hinhchuachen{ch-labs-digits-cm.png}{Ma trận nhầm lẫn của KNN trên tập kiểm tra; độ đậm theo thang log để thấy rõ các ô lỗi nhỏ.}{fig:lab-digits-cm}
+
+KNN sai 371 trên 10\,500 ảnh. Các lỗi nhiều nhất đều hợp lý về hình dạng: 4 nhận thành 9 (24 ảnh), 8 thành 5 (22), 2 thành 7 (22), 7 thành 1 (17). Chữ số 8 có recall thấp nhất (0,918), chữ số 1 cao nhất (0,994).
+
+% =========================================================
+\section{Lab 7 -- Phân tích cảm xúc bình luận tiếng Việt}
+\label{sec:lab-sentiment}
+% =========================================================
+
+\paragraph{Mục tiêu.} Phân loại bình luận sản phẩm điện thoại thành tích cực hoặc tiêu cực, vận dụng Count và TF-IDF ở Chương~\ref{chap:preprocessing}, Naive Bayes và hồi quy logistic ở Chương~\ref{chap:classify}.
+
+\paragraph{Dữ liệu.} Ba tệp \texttt{Train.csv}, \texttt{Dev.csv}, \texttt{Test.csv} lần lượt có 7786, 1112 và 2224 bình luận. Nhãn được suy ra từ số sao: từ 4 sao trở lên là tích cực, còn lại là tiêu cực. Tập kiểm tra có 62,8\% tích cực, nên một mô hình luôn đoán ``tích cực'' đã đạt accuracy 0,628; đó là mốc phải vượt qua.
+
+\paragraph{Tách từ.} Tiếng Việt viết cách theo âm tiết, nên ``điện thoại'' sẽ bị đếm thành hai từ nếu không xử lý. Hàm \texttt{tokenize} của thư viện \texttt{pyvi} nối các âm tiết của một từ bằng dấu gạch dưới: \texttt{điện\_thoại}, \texttt{màn\_hình}. Từ điển thu được từ tập huấn luyện có 8681 từ.
+
+\begin{lstlisting}[caption={Lab 7 -- tách từ, vector hóa và so sánh mô hình}]
+# pip install pyvi
+import pandas as pd
+from pyvi.ViTokenizer import tokenize
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import f1_score, roc_auc_score
+from sklearn.naive_bayes import MultinomialNB
+
+train, dev, test = (pd.read_csv(f"data/{n}.csv") for n in ["Train", "Dev", "Test"])
+for d in (train, dev, test):
+    d["y"] = (d["n_star"] >= 4).astype(int)     # 1 = tich cuc, 0 = tieu cuc
+    d["tokens"] = d["comment"].apply(tokenize)
+
+for vec in [CountVectorizer(), TfidfVectorizer()]:
+    A = vec.fit_transform(train["tokens"])      # fit chi tren tap huan luyen
+    D, B = vec.transform(dev["tokens"]), vec.transform(test["tokens"])
+    for model in [MultinomialNB(), LogisticRegression(max_iter=2000)]:
+        model.fit(A, train["y"])
+        p = model.predict(B)
+        print(type(vec).__name__, type(model).__name__,
+              round(model.score(D, dev["y"]), 3), round(model.score(B, test["y"]), 3),
+              round(f1_score(test["y"], p, pos_label=0), 3),
+              round(roc_auc_score(test["y"], model.predict_proba(B)[:, 1]), 3))
+\end{lstlisting}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|c|c|c|c|c|}
+\hline
+\textbf{Vector hóa} & \textbf{Mô hình} & \textbf{Train} & \textbf{Dev} & \textbf{Test} & \textbf{F1 lớp tiêu cực} & \textbf{AUC} \\
+\hline
+Count & Naive Bayes & 0,881 & 0,856 & 0,835 & 0,785 & 0,912 \\ \hline
+Count & Random Forest & 1,000 & 0,861 & 0,845 & 0,780 & 0,911 \\ \hline
+Count & Logistic Regression & 0,955 & 0,865 & 0,835 & 0,780 & 0,915 \\ \hline
+TF-IDF & Naive Bayes & 0,845 & 0,802 & 0,800 & 0,668 & 0,911 \\ \hline
+TF-IDF & Random Forest & 1,000 & 0,855 & 0,840 & 0,774 & 0,909 \\ \hline
+TF-IDF & Logistic Regression & 0,902 & \textbf{0,871} & \textbf{0,855} & \textbf{0,805} & \textbf{0,927} \\ \hline
+\end{tabular}
+\caption{Kết quả Lab 7. Mô hình được chọn theo cột Dev; cột Test chỉ để báo cáo}
+\label{tab:lab-sentiment}
+\end{table}
+
+\hinhchuachen{ch-labs-sentiment.png}{Trái: ma trận nhầm lẫn của mô hình tốt nhất trên tập kiểm tra. Phải: đường ROC của ba mô hình.}{fig:lab-sentiment}
+
+Hệ số của hồi quy logistic cho biết từ nào đẩy dự đoán về mỗi phía, và kết quả rất dễ hiểu. Các từ tiêu cực mạnh nhất gồm \textit{tệ, thất\_vọng, chán, đơ, kém, chậm}; các từ tích cực mạnh nhất gồm \textit{tốt, ok, tuyệt\_vời, đẹp, mượt, trâu}. Riêng \textit{chê} lại mang trọng số tích cực vì thường đi trong cụm ``miễn chê'', cho thấy giới hạn của mô hình túi từ: nó không biết thứ tự và ngữ cảnh.
+
+% =========================================================
+\section{Lab 8 -- Ứng dụng Gradient Descent: từ tính tay đến PyTorch}
+\label{sec:lab-gd}
+% =========================================================
+
+\paragraph{Mục tiêu.} Cài đặt lại ví dụ mini-batch Gradient Descent đã tính tay ở Mục~\ref{sec:minibatch-gd} (hồi quy) và Mục~\ref{sec:minibatch-logreg} (phân lớp) bằng PyTorch, một thư viện tính toán có khả năng \textbf{tự động tính đạo hàm} (automatic differentiation, gọi tắt là autograd). Qua đó, người học kiểm chứng công thức gradient đã suy ra bằng tay và làm quen với những lỗi thường gặp khi tự viết vòng lặp huấn luyện.
+
+\subsection{Tensor và autograd: kiểm chứng ví dụ tính tay}
+\label{sec:torch-autograd}
+
+
+\textbf{Tensor} của PyTorch là mảng nhiều chiều giống \texttt{ndarray} của NumPy (Chương~\ref{chap:numpy-pandas}), có thêm hai khả năng: chạy được trên GPU và \textbf{ghi lại các phép toán} đã thực hiện. Khi một tensor được khai báo với \texttt{requires\_grad=True}, mọi phép toán dùng đến nó được ghi thành một \textbf{đồ thị tính toán} (computational graph). Việc tính giá trị của hàm mất mát đi theo chiều xuôi của đồ thị và được gọi là \textbf{lan truyền xuôi}. Lệnh \texttt{backward()} đi theo chiều ngược lại, áp dụng quy tắc dây chuyền (đạo hàm của hàm hợp) để tính đạo hàm, gọi là \textbf{lan truyền ngược}, rồi ghi đạo hàm của hàm mất mát theo từng tham số vào thuộc tính \texttt{.grad}.
+
+Đoạn mã dưới đây chạy lại \textbf{đúng} ví dụ mini-batch Gradient Descent cho phân lớp ở Mục~\ref{sec:minibatch-logreg}: năm mẫu, hai đặc trưng, \texttt{batch\_size} $= 3$, khởi tạo $b = 0{,}3$, $w_1 = 0{,}2$, $w_2 = 0{,}1$ và tốc độ học $\alpha = 0{,}1$. Điểm khác biệt là ta \textbf{không viết công thức gradient}: chỉ cần khai báo mô hình và hàm mất mát, PyTorch tự tính phần còn lại.
+
+\begin{lstlisting}[caption={Mini-batch Gradient Descent cho hồi quy logistic với autograd của PyTorch}]
+import torch
+
+X = torch.tensor([
+    [1.0, 3.0],
+    [2.0, 1.0],
+    [1.0, 1.0],
+    [7.0, 8.0],
+    [6.0, 4.0]
+])
+y = torch.tensor([0.0, 0.0, 0.0, 1.0, 1.0])
+b = torch.tensor(0.3, requires_grad=True)       # can tinh dao ham
+w = torch.tensor([0.2, 0.1], requires_grad=True)
+loss_func = torch.nn.BCEWithLogitsLoss()        # sigmoid + entropy cheo
+batch_size = 3
+alpha = 0.1
+for start in range(0, len(X), batch_size):
+    X_batch = X[start:min(start + batch_size, len(X))]
+    y_batch = y[start:min(start + batch_size, len(X))]
+    z = b + X_batch @ w                         # lan truyen xuoi
+    loss = loss_func(z, y_batch)
+    loss.backward()                             # lan truyen nguoc
+    with torch.no_grad():                       # cap nhat ngoai do thi
+        w -= alpha * w.grad
+        b -= alpha * b.grad
+    print('Gradient', b.grad, w.grad)
+    w.grad.zero_()                              # xoa gradient cu
+    b.grad.zero_()
+    print('Weight', b.item(), w.tolist())
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Kết quả chạy đoạn mã trên}, numbers=none]
+Gradient tensor(0.6752) tensor([0.9052, 1.1352])
+Weight 0.23247984051704407 [0.10948067158460617, -0.013518474996089935]
+Gradient tensor(-0.2967) tensor([-1.9260, -1.7689])
+Weight 0.2621545195579529 [0.30207714438438416, 0.16337350010871887]
+\end{lstlisting}
+
+Bốn dòng kết quả trùng khớp với lời giải tay ở Mục~\ref{sec:minibatch-logreg}. Lô 1 cho gradient $(0{,}6752;\ 0{,}9052;\ 1{,}1352)$ và trọng số mới $(0{,}2325;\ 0{,}1095;\ -0{,}0135)$. Lô 2 cho gradient $(-0{,}2967;\ -1{,}9260;\ -1{,}7689)$ và trọng số mới $(0{,}2622;\ 0{,}3021;\ 0{,}1634)$. Các chữ số lẻ ở cuối dòng \texttt{Weight} xuất hiện vì tensor lưu số thực 32 bit. Sự trùng khớp này khẳng định công thức gradient $\frac{1}{B}\mathbf{X}_B^\top\big(\sigma(\mathbf{z}) - \mathbf{y}\big)$ suy ra bằng tay ở Chương~\ref{chap:classify} là đúng. Bảng~\ref{tab:torch-lines} đối chiếu từng dòng lệnh với bước tính tay tương ứng.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|p{4.5cm}|p{4.3cm}|p{4.6cm}|}
+\hline
+\textbf{Dòng lệnh} & \textbf{Ý nghĩa} & \textbf{Bước tính tay tương ứng} \\
+\hline
+\texttt{requires\_grad=True} & Đánh dấu tensor là tham số cần tính đạo hàm & Các ẩn số $b$, $w_1$, $w_2$ \\ \hline
+\texttt{z = b + X\_batch @ w} & Lan truyền xuôi, đồng thời ghi đồ thị tính toán & $z_i = b + w_1x_{i1} + w_2x_{i2}$ \\ \hline
+\texttt{BCEWithLogitsLoss()} & Áp dụng sigmoid, tính entropy chéo rồi lấy trung bình trên lô & $L = -\frac{1}{B}\sum_i \big[y_i\ln\hat{y}_i + (1 - y_i)\ln(1 - \hat{y}_i)\big]$ \\ \hline
+\texttt{loss.backward()} & Lan truyền ngược, ghi đạo hàm vào \texttt{.grad} & $\nabla L = \frac{1}{B}\mathbf{X}_B^\top(\hat{\mathbf{y}} - \mathbf{y})$ \\ \hline
+\texttt{w -= alpha * w.grad} trong \texttt{torch.no\_grad()} & Cập nhật tham số, không ghi phép cập nhật vào đồ thị & $\mathbf{w} \leftarrow \mathbf{w} - \alpha\nabla L$ \\ \hline
+\texttt{w.grad.zero\_()} & Xóa gradient của lô vừa xong & Mỗi lô tính gradient lại từ đầu \\ \hline
+\end{tabular}
+\caption{Đối chiếu mã PyTorch với các bước tính tay}
+\label{tab:torch-lines}
+\end{table}
+
+Ở đây hệ số chặn $b$ được khai báo thành một tham số riêng, nên \texttt{X} không cần cột toàn số 1 như cách viết ma trận ở Chương~\ref{chap:regression} và~\ref{chap:classify}; hai cách viết tương đương nhau. Biểu thức \texttt{min(start + batch\_size, len(X))} chỉ giúp đọc rõ ý, vì phép cắt lát của Python tự dừng ở cuối dãy: lô cuối cùng tự động chỉ còn 2 mẫu.
+
+\paragraph{Vì sao phải gọi \texttt{zero\_()}?} Sau mỗi lần gọi \texttt{backward()}, PyTorch \textbf{cộng dồn} gradient vào \texttt{.grad} chứ không ghi đè. Nếu bỏ hai dòng \texttt{zero\_()}, gradient dùng để cập nhật ở lô 2 là tổng gradient của hai lô: $(0{,}6752 - 0{,}2967;\ 0{,}9052 - 1{,}9260;\ 1{,}1352 - 1{,}7689) = (0{,}3785;\ -1{,}0208;\ -0{,}6337)$. Trọng số sau epoch khi đó sai thành $(0{,}1946;\ 0{,}2116;\ 0{,}0499)$ thay vì $(0{,}2622;\ 0{,}3021;\ 0{,}1634)$. Chương trình vẫn chạy và không báo lỗi; đây là lỗi phổ biến nhất của người mới dùng PyTorch. Việc cộng dồn là một thiết kế có chủ ý: khi bộ nhớ GPU không chứa nổi một lô lớn, ta chia lô thành nhiều phần, gọi \texttt{backward()} cho từng phần rồi mới cập nhật một lần (kỹ thuật tích lũy gradient --- gradient accumulation).
+
+\paragraph{Vì sao cập nhật trong \texttt{torch.no\_grad()}?} Phép cập nhật trọng số không phải một phần của mô hình. Nếu để PyTorch ghi phép cập nhật vào đồ thị tính toán, đồ thị sẽ phình to qua mỗi bước. Hơn nữa, PyTorch không cho phép sửa trực tiếp (in-place) một tensor lá đang cần tính đạo hàm ở ngoài khối \texttt{no\_grad()}.
+
+\paragraph{Vì sao dùng \texttt{BCEWithLogitsLoss} thay cho sigmoid rồi \texttt{BCELoss}?} Hai cách cho cùng kết quả về mặt toán học nhưng khác nhau về \textbf{ổn định số}. Xét một mẫu có nhãn $y = 0$ mà mô hình cho $z = 20$, tức là dự đoán sai rất nặng. Trong số thực 32 bit, $\sigma(20) \approx 1 - 2 \times 10^{-9}$ bị làm tròn thành đúng 1, nên $\ln(1 - \sigma(z)) = \ln 0$. Bảng~\ref{tab:bce-stability} cho thấy hậu quả.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+ & \multicolumn{2}{c|}{\texttt{BCELoss(sigmoid(z))}} & \multicolumn{2}{c|}{\texttt{BCEWithLogitsLoss()(z)}} \\
+\cline{2-5}
+$z$ (nhãn $y = 0$) & Mất mát & Gradient & Mất mát & Gradient \\
+\hline
+5 & 5,0067 & 0,9933 & 5,0067 & 0,9933 \\ \hline
+20 & 100 & 0 & 20 & 1 \\ \hline
+200 & 100 & 0 & 200 & 1 \\ \hline
+\end{tabular}
+\caption{Mất mát và gradient theo $z$ khi nhãn $y = 0$, tính bằng số thực 32 bit}
+\label{tab:bce-stability}
+\end{table}
+
+Với $z = 20$, \texttt{BCELoss} chặn mất mát ở 100 và trả về gradient bằng 0: mô hình đang sai nghiêm trọng nhưng không nhận được tín hiệu nào để sửa. \texttt{BCEWithLogitsLoss} nhận trực tiếp $z$ và tính theo công thức tương đương $\ln(1 + e^{z}) - yz$, được sắp xếp để không bao giờ tràn số. Nhờ đó gradient luôn bằng $\sigma(z) - y$, đúng như công thức ở Chương~\ref{chap:classify}.
+
+\paragraph{Hồi quy: chỉ cần đổi hàm mất mát.} Thay \texttt{loss\_func} bằng \texttt{torch.nn.MSELoss()} và thay \texttt{y} bằng giá trị hồi quy $(4, 3, 1, 9, 7)$. Đoạn mã khi đó in ra gradient $(-3{,}8667;\ -5{,}3333;\ -8{,}1333)$ rồi $(5{,}8667;\ 39{,}3267;\ 39{,}9733)$, với trọng số cuối $(0{,}1000;\ -3{,}1993;\ -3{,}0840)$. Các số này trùng với lời giải tay ở Mục~\ref{sec:minibatch-gd}, kể cả hiện tượng phân kỳ sau lô 2. Hệ số 2 trong gradient của MSE tự xuất hiện từ đạo hàm của hàm bình phương, không cần khai báo.
+
+\subsection{Từ vòng lặp thủ công đến \texttt{torch.optim}}
+
+Hai dòng cập nhật trong \texttt{torch.no\_grad()} và hai dòng \texttt{zero\_()} lặp lại trong mọi chương trình huấn luyện, nên PyTorch đóng gói chúng thành \textbf{bộ tối ưu} (optimizer). Đoạn mã sau dùng lại \texttt{X}, \texttt{y} và \texttt{loss\_func} ở trên, và cho đúng các trọng số đã tính:
+
+\begin{lstlisting}[caption={Thay phần cập nhật thủ công bằng torch.optim.SGD}]
+b = torch.tensor(0.3, requires_grad=True)
+w = torch.tensor([0.2, 0.1], requires_grad=True)
+opt = torch.optim.SGD([b, w], lr=0.1)
+for start in range(0, len(X), batch_size):
+    Xb, yb = X[start:start + batch_size], y[start:start + batch_size]
+    opt.zero_grad()                             # = w.grad.zero_()
+    loss = loss_func(b + Xb @ w, yb)
+    loss.backward()
+    opt.step()                                  # = w -= alpha * w.grad
+    print(round(b.item(), 4), [round(v, 4) for v in w.tolist()])
+# 0.2325 [0.1095, -0.0135]
+# 0.2622 [0.3021, 0.1634]
+\end{lstlisting}
+
+Khi cần, có thể thay \texttt{SGD} bằng các bộ tối ưu khác của \texttt{torch.optim} như \texttt{Adam} mà không phải sửa phần còn lại của vòng lặp.
+
+% ---------------------------------------------------------
+\section{Tóm tắt chương}
+% ---------------------------------------------------------
+\begin{itemize}
+    \item Lab 1: đa thức bậc 2 và Random Forest cho $R^2 \approx 0{,}85$ trên Ames Housing; cây không giới hạn độ sâu quá khớp.
+    \item Lab 2: khi đặc trưng không tương quan với mục tiêu, mọi mô hình đều thất bại; $R^2$ âm nghĩa là thua mô hình đoán trung bình.
+    \item Lab 3: nội suy tuyến tính cho dữ liệu có thứ tự; khi tự cài đặt SVD/PCA, vector riêng nằm theo \textbf{cột}, PCA phải chuẩn hóa tâm, và luôn đối chiếu với thư viện.
+    \item Lab 4: xáo trộn chuỗi thời gian gây rò rỉ dữ liệu; $R^2$ cao trên giá chỉ phản ánh tính liên tục của chuỗi; mô hình phải thắng được dự báo ngây thơ mới có giá trị.
+    \item Lab 5: duỗi phẳng ảnh $64 \times 64$ cho 4096 đặc trưng trên 858 mẫu huấn luyện; độ chính xác tốt nhất đạt 43,7\%.
+    \item Lab 6: cùng quy trình đạt 0,97 trên chữ số nhờ có nhiều dữ liệu hơn hẳn; PCA vừa giảm chi phí vừa cải thiện KNN.
+    \item Lab 7: tách từ tiếng Việt, TF-IDF và hồi quy logistic cho kết quả tốt nhất.
+    \item Lab 8: autograd của PyTorch tái hiện đúng từng con số của ví dụ mini-batch Gradient Descent tính tay ở Chương~\ref{chap:regression} và~\ref{chap:classify}. Khi tự viết vòng lặp: xóa gradient sau mỗi bước, cập nhật trong \texttt{torch.no\_grad()}, dùng \texttt{BCEWithLogitsLoss} thay cho sigmoid rồi \texttt{BCELoss}.
+\end{itemize}
+
+% ---------------------------------------------------------
+\section{Bài tập}
+% ---------------------------------------------------------
+\begin{enumerate}
+    \item (Lab 1) Chạy lại Lab 1 với 5 lần chia dữ liệu khác nhau (\texttt{random\_state} = 0--4). Báo cáo trung bình và độ lệch chuẩn của $R^2$ test cho từng mô hình. Thứ hạng các mô hình có ổn định không?
+    \item (Lab 1) Thay \texttt{SalePrice} bằng $\log(\text{SalePrice})$ và chuẩn hóa đặc trưng bằng \texttt{StandardScaler}. Sau đó so sánh hệ số hồi quy với mức độ quan trọng hoán vị của Random Forest, tính bằng hàm \texttt{permutation\_\allowbreak importance}.
+    \item (Lab 1) Bổ sung các cột \texttt{Neighborhood} (One Hot), \texttt{Year Built}, \texttt{Garage Cars} vào pipeline ở Chương~\ref{chap:preprocessing}. $R^2$ cải thiện bao nhiêu?
+    \item (Lab 2) Thay hai đặc trưng hiện tại bằng các cột khác của \texttt{Banking.xlsx} (sau khi đã loại bỏ họ tên, email, SSN). Dùng \texttt{DummyRegressor} làm mô hình cơ sở; đặc trưng nào thực sự có ích?
+    \item (Lab 4) Đánh giá mô hình VNM bằng \texttt{TimeSeriesSplit(n\_splits=5)} với các cửa sổ 3, 7, 14, 30 phiên. Lần nào thắng được mô hình ngây thơ? Lặp lại với một mã cổ phiếu khác.
+    \item (Lab 3) Viết hàm \texttt{my\_pca(X, k)} trả về tọa độ chiếu và tỉ lệ phương sai giải thích; kiểm tra trên tập \texttt{load\_iris} rằng kết quả trùng với \texttt{PCA(k)} (sai khác dấu từng cột).
+    \item (Lab 5) Thử số thành phần PCA bằng 20, 40, 80 cho PCA + KNN, rồi liệt kê 5 cặp chữ bị nhầm nhiều nhất.
+    \item (Lab 6) Vẽ độ chính xác của PCA + KNN theo số thành phần 10, 20, 50, 100, 200. Từ đâu độ chính xác không tăng nữa?
+    \item (Lab 7) Gói \texttt{TfidfVectorizer} và \texttt{LogisticRegression} vào một \texttt{Pipeline}, chọn \texttt{C} và \texttt{ngram\_range} theo tập Dev. Thêm bigram có giúp mô hình hiểu đúng cụm từ ``miễn chê'' (nghĩa tích cực dù chứa chữ ``chê'') không?
+    \item (Lab 8) Chạy đoạn mã autograd với \texttt{batch\_size} bằng 1 và bằng 5, rồi đối chiếu với bài tập tính tay ở Chương~\ref{chap:classify}. Chạy thêm 200 epoch, có và không xáo trộn dữ liệu (dùng \texttt{torch.randperm}); so sánh entropy chéo cuối cùng với Bảng~\ref{tab:minibatch-shuffle}.
+    \item (Lab 8) Bỏ hai dòng \texttt{zero\_()} và chạy lại. Kiểm tra rằng gradient in ra ở lô 2 bằng tổng gradient của hai lô. Lặp lại thí nghiệm ở Bảng~\ref{tab:bce-stability} với nhãn $y = 1$ và $z = -20$.
+\end{enumerate}
+
+% ---------------------------------------------------------
+\section*{Tài liệu tham khảo của chương}
+\addcontentsline{toc}{section}{Tài liệu tham khảo của chương}
+% ---------------------------------------------------------
+\begin{enumerate}
+    \item Barocas, S., Hardt, M., \& Narayanan, A. (2023). \textit{Fairness and Machine Learning: Limitations and Opportunities}. MIT Press.
+    \item Breiman, L. (2001). Random Forests. \textit{Machine Learning}, 45(1), 5--32.
+    \item De Cock, D. (2011). Ames, Iowa: Alternative to the Boston Housing Data as an End of Semester Regression Project. \textit{Journal of Statistics Education}, 19(3).
+    \item Dalal, N., \& Triggs, B. (2005). Histograms of Oriented Gradients for Human Detection. \textit{Proceedings of CVPR 2005}, 886--893.
+    \item Fama, E. F. (1970). Efficient Capital Markets: A Review of Theory and Empirical Work. \textit{The Journal of Finance}, 25(2), 383--417.
+    \item Hyndman, R. J., \& Athanasopoulos, G. (2021). \textit{Forecasting: Principles and Practice} (3rd ed.). OTexts.
+    \item LeCun, Y., Bottou, L., Bengio, Y., \& Haffner, P. (1998). Gradient-Based Learning Applied to Document Recognition. \textit{Proceedings of the IEEE}, 86(11), 2278--2324.
+    \item Liu, Y. (H.) (2019). \textit{Python Machine Learning By Example} (2nd ed.), Chương 9: Stock Price Prediction with Regression Algorithms. Packt Publishing.
+    \item Raschka, S., Liu, Y. (H.), \& Mirjalili, V. (2022). \textit{Machine Learning with PyTorch and Scikit-Learn}, Chương 9: Predicting Continuous Target Variables with Regression Analysis (bộ dữ liệu Ames Housing). Packt Publishing.
+    \item Raschka, S. (2018). MLxtend: Providing machine learning and data science utilities and extensions to Python's scientific computing stack. \textit{Journal of Open Source Software}, 3(24), 638.
+    \item Sarkar, D., Bali, R., \& Sharma, T. (2018). \textit{Practical Machine Learning with Python}, Chương 11: Forecasting Stock and Commodity Prices. Apress.
+\end{enumerate}

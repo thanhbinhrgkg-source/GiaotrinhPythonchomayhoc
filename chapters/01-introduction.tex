@@ -1,4 +1,5 @@
 \chapter{Giới thiệu về Python}
+\label{chap:intro}
 
 \section{Python là gì?}
 
@@ -15,6 +16,7 @@ print("Hello, Python!")
 Cú pháp của Python có xu hướng sử dụng khoảng trắng để thể hiện cấu trúc của chương trình. Ví dụ:
 
 \begin{lstlisting}
+age = 20
 if age >= 18:
     print("Adult")
 else:
@@ -97,7 +99,24 @@ Sau khi cài đặt Anaconda/Miniconda, mở Anaconda Prompt và sử dụng l�
 \begin{lstlisting}[language=bash]
 conda create -n ai python=3.14 anaconda
 \end{lstlisting}
-Xác nhận tiến trình cài đặt các gói bằng cách gõ \texttt{y} (yes) khi được yêu cầu.
+Xác nhận tiến trình cài đặt các gói bằng cách gõ \texttt{y} (yes) khi được yêu cầu. Sau đó kích hoạt môi trường bằng lệnh \texttt{conda activate ai}. Mọi thư viện cài thêm từ lúc này chỉ thuộc về môi trường \texttt{ai}, nhờ vậy các dự án khác nhau không xung đột phiên bản thư viện với nhau.
+
+\subsection{Làm việc với Jupyter Notebook}
+\label{sec:jupyter}
+
+Các ví dụ và bài thực hành của giáo trình được viết dưới dạng \textbf{notebook} (tệp \texttt{.ipynb}): một tài liệu tương tác gồm nhiều \textbf{ô} (cell), trong đó ô mã chứa lệnh Python, còn ô văn bản (Markdown) chứa phần giải thích. Jupyter bắt nguồn từ dự án IPython do Fernando Pérez khởi xướng năm 2001 và trở thành Project Jupyter năm 2014 (Kluyver và cộng sự, 2016). Notebook cho phép chạy từng đoạn mã và xem ngay kết quả, kể cả biểu đồ, ở bên dưới. Vì vậy notebook rất phù hợp để khám phá dữ liệu và thử nghiệm mô hình.
+
+\begin{lstlisting}[language=bash, caption={Mở JupyterLab trong môi trường ai}]
+conda activate ai
+jupyter lab
+\end{lstlisting}
+
+Lệnh \texttt{jupyter lab} mở giao diện JupyterLab trên trình duyệt. Một số điểm cần nắm:
+\begin{itemize}
+    \item Tổ hợp phím \texttt{Shift + Enter} chạy ô hiện tại và chuyển xuống ô kế tiếp.
+    \item Biến tạo ở một ô được giữ trong bộ nhớ của \textbf{kernel} và dùng được ở các ô sau, nên thứ tự chạy các ô quyết định kết quả. Trước khi nộp bài, hãy chọn \textit{Restart Kernel and Run All Cells} để chắc chắn notebook chạy đúng từ đầu đến cuối.
+    \item Visual Studio Code và Google Colab cũng mở được tệp \texttt{.ipynb} với cách dùng tương tự.
+\end{itemize}
 
 \section{Tóm tắt chương}
 
@@ -107,4 +126,21 @@ Trong chương này, chúng ta đã tìm hiểu:
     \item Lịch sử hình thành chi tiết qua từng giai đoạn (từ Python 0.9.0 đến Python 3.x).
     \item Tiểu sử của tác giả Guido van Rossum và nguồn gốc tên gọi thú vị của Python.
     \item Các bước cài đặt môi trường lập trình cơ bản với Python và Anaconda.
+    \item Cách tạo, kích hoạt môi trường Conda và làm việc với Jupyter Notebook.
 \end{itemize}
+
+\section{Bài tập}
+\begin{enumerate}
+    \item Cài đặt Anaconda hoặc Miniconda, tạo và kích hoạt môi trường \texttt{ai}, rồi kiểm tra phiên bản Python bằng lệnh \texttt{python --version}.
+    \item Mở JupyterLab và tạo một notebook gồm một ô Markdown giới thiệu bản thân và một ô mã in ra lời chào. Lưu thành tệp \texttt{.ipynb}, khởi động lại kernel rồi chạy lại toàn bộ notebook.
+    \item Trong notebook, chạy lệnh \texttt{import this} để đọc ``The Zen of Python''. Chọn hai nguyên tắc và giải thích ý nghĩa của chúng bằng ví dụ cụ thể.
+\end{enumerate}
+
+% ---------------------------------------------------------
+\section*{Tài liệu tham khảo của chương}
+\addcontentsline{toc}{section}{Tài liệu tham khảo của chương}
+% ---------------------------------------------------------
+\begin{enumerate}
+    \item Kluyver, T. et al. (2016). Jupyter Notebooks -- a publishing format for reproducible computational workflows. In \textit{Positioning and Power in Academic Publishing}, 87--90. IOS Press.
+    \item Python Software Foundation. \textit{The Python Tutorial}. \url{https://docs.python.org/3/tutorial/}
+\end{enumerate}
